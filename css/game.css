@@ -26,6 +26,10 @@ footer {
 	height: 20%;
 	top: 80%;
 }
+#answers table {
+	height: 100%;
+	overflow: hidden;
+}
 #answers td {
 	border: 8px solid white;
 	width: 33%;

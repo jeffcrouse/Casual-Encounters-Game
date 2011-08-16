@@ -133,7 +133,7 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 	<script type="text/javascript" src="js/libs/jquery-ui-1.8.15.custom.min.js"></script>
 
 	<script>
-	
+		
 	//
 	//	INITIALIZE SOME GLOBAL VARS
 	//
@@ -159,7 +159,7 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 	var guesses;				// The number of guesses that have been made in the current round
 	var num_rounds=<?php print $rounds; ?>;
 	var round=0;
-	
+	var paused=false;
 	//
 	//	BODY READY FUNCTION
 	//
@@ -179,6 +179,7 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 			
 			switch(character)
 			{
+				case ' ':	toggle_paused();break;
 				case 'q':	guess(0, 0);	break;
 				case 'w': 	guess(0, 1);	break;
 				case 'e':	guess(0, 2);	break;
@@ -211,7 +212,23 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 		] });
 	});
 	
-
+	// -----------------------------
+	function toggle_paused()
+	{
+		if(paused)
+		{
+			interval_ptr = setInterval("tick()", tick_interval);
+			paused=false;
+		}
+		else
+		{
+			$("#time_display").html( "paused" );
+			if(interval_ptr==null) return;
+			clearInterval(interval_ptr);
+			interval_ptr=null;
+			paused=true;
+		}
+	}
 	
 	// -----------------------------
 	// Loads 3 'items' from api.php into the global 'items' var
@@ -229,9 +246,9 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 		
 		// Make the call to the API
 		xhr_ptr = $.ajax({
+			url: "api.php",
 			dataType: 'json',
 			data: {'query': category},
-			url: "api.php",
 			success: function(response){
 			
 				// If we get a bad response, wait a second and try to load again
@@ -261,9 +278,12 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 					$(image).load(function() {	// Start the round if it loads successfully
 						console.log("success loading "+this.src);
 						
-						// get rid of the function that is bound to this image load
+						// get rid of any 'load' function that has been bound
+						// to the $(image) in previous rounds
 						$(this).unbind('load');
 						
+						// The main thing that happens to kick off the round is to start the tick()
+						// function, so only start it if there is currently no tick interval
 						if(interval_ptr==null)
 						{
 							// Loop through the items array and put the titles into the correct div
@@ -289,7 +309,7 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 						{
 							console.log("ERROR:  trying to start round while one is already running.");
 						}	
-					}).error(function() { 		// Try again if it doesn't
+					}).error(function() { 		// Try again if $(image) didn't load properly
 					
 						console.log("error loading an image. trying again");
 						setTimeout("start_round()", 1000);
@@ -422,8 +442,9 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 	{
 		console.log("guess("+p+", "+i+")");
 		
-		// if the player has already guessed in this round, or if a round isn't running, ignore
-		if(players[p].has_guessed||interval_ptr==null) return;
+		// if the game is paused, or the player has already guessed in this round, 
+		// or if a round isn't running, ignore
+		if(paused||players[p].has_guessed||interval_ptr==null) return;
 		if(time_left<=0||guesses>=players.length) alert("ERROR! SANITY IS BROKEN!");
 		
 		players[p].has_guessed = true;
@@ -440,7 +461,7 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 		}
 		else			// incorrect guess
 		{
-			players[p].score -= time_left/10;
+			players[p].score -= time_left/20;
 			console.log("player "+p+" wrong.  score is now "+players[p].score);
 			$("#player-"+p+"-name").css('color', 'red');
 			$("#player-"+p+"-score").html( players[p].score );

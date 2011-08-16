@@ -4,7 +4,8 @@ error_reporting(E_ALL);
 session_start();
 
 if(isset($_REQUEST['reset'])) session_unset();
-if(!isset($_SESSION['used'])) $_SESSION['used']=array();
+if(!isset($_SESSION['used_urls'])) $_SESSION['used_urls']=array();
+if(!isset($_SESSION['used_titles'])) $_SESSION['used_titles']=array();
 
 
 $cities = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
@@ -60,7 +61,7 @@ class CLSearchPage
 
 		foreach($matches[0] as $url)
 		{
-			if(!in_array($url, $_SESSION['used'])) $this->subpages[] = $url;
+			if(!in_array($url, $_SESSION['used_urls'])) $this->subpages[] = $url;
 		}
 		$this->total = count($this->subpages);
 	}	
@@ -114,6 +115,7 @@ class CLPage
 			$this->title = trim(implode("-", $parts));
 		}
 		
+
 		$pattern='|<div id="userbody">(.*?)<ul class="blurbs">|ims';
 		if(preg_match($pattern, $contents, $matches) === false)
 		{
@@ -188,16 +190,35 @@ class API
 		
 		if($this->searchpage->total<3) return false;
 		
+		// Loop thorough all of the pages on the search page
 		for($i=0; $i<$this->searchpage->total; $i++)
 		{		
 			$url = $this->searchpage->subpages[$i];
-			$_SESSION['used'][] = $url;
 			
+			// Create a new CLPage object using the URL. 
+			// This will parse the page
 			$page = new CLPage($url);
 			$page->city = ucfirst($this->city);
 			
-			if(empty($page->image)||empty($page->title)||$page->blacklisted()) continue;
+			// If the page has no images or no title, skip it.
+			if(empty($page->image)||empty($page->title)) 
+				continue;
+			
+			// if the page contains a blacklisted word, skip it
+			if($page->blacklisted())
+				continue;
+			
+			// If we have already used a page with the same title, skip it.
+			if(in_array($page->title, $_SESSION['used_titles']))
+				continue;
+			
+			// We don't need to send the body (it's not used and slows do the AJAX)
+			unset($page->body);
 			$this->items[] = $page;
+			
+			$_SESSION['used_urls'][] = $url;
+			$_SESSION['used_titles'][] = $page->title;
+			
 			if(count($this->items)>=3) return $this->items;
 		}
 
