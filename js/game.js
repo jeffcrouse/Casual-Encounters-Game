@@ -9,15 +9,15 @@
 
 var game =
 {	
-	players: 		new Array(),	// An array of player objects
+	players: 		[],				// An array of player objects
 	
-	categories: 	new Array(),	// An array of strings (m4m, w4m, etc)
+	categories: 	[],				// An array of strings (m4m, w4m, etc)
 	category:		null,			// The randomly chosen category
 	
-	cities:			new Array(),	// An array of all cities
+	cities:			[],				// An array of all cities
 	city: 			null,			// The city that the current round is from
 	
-	items: 			new Array(),	// Craigslist pages loaded from the API
+	items: 			[],				// Craigslist pages loaded from the API
 	item_i:			null,			// The randomly chosen index (0-2)
 	image: 			new Image(),	// An image loaded from the random item (items[item_i].image)
 	
@@ -41,6 +41,9 @@ var game =
 	canvas:			null,			// The canvas object that we will draw the image on
 	ctx:			null,			// the 2d context of the canvas
 
+	reveal_modes:	['move_up', 'fade', 'blocks'],	// Implemented in tick()
+	reveal_mode:	null,
+
 	// ------------------------------------------
 	init: function(_players, _categories, _cities, _num_rounds, _end_callback)
 	{	
@@ -57,7 +60,7 @@ var game =
 		this.ctx = this.canvas.getContext("2d");
 
 		this.window_resize();
-
+	
 		// if there is only one player, activate 'click' mode
 		if(this.players.length==1)
 		{
@@ -83,7 +86,6 @@ var game =
 	// ------------------------------------------
 	make_sound: function(name)
 	{
-		// Load sad trombone sound
 		var audio = document.createElement("audio");
 		var source = document.createElement('source');
 		if (audio.canPlayType('audio/mpeg;')) {
@@ -172,6 +174,9 @@ var game =
 		// Pick a new category
 		var i = Math.floor( Math.random() * this.categories.length );
 		this.category = this.categories[i];		
+		
+		i = Math.floor( Math.random() * this.reveal_modes.length );
+		this.reveal_mode = this.reveal_modes[i];
 		
 		$("#round_info").html("Loading "+this.category+' <img src="gs/ajax-loader.gif" />');
 		
@@ -271,8 +276,12 @@ var game =
 		}
 	},
 
-
-
+	// ------------------------------------------
+    easeOutCubic: function(value, min, max, d)
+	{
+		return max * ((value = value / d - 1) * value * value + 1) + min;
+	},
+        
 	// ------------------------------------------
 	// This function is called every tick_interval millis
 	// and is started in start_round()
@@ -284,15 +293,48 @@ var game =
 		// Otherwise, it takes a while to reach the screen in Firefox
 		var pct = this.time_left / this.round_length;
 		
-		var h = this.canvas.height;
-		var w = (this.canvas.height / this.image.height) * this.image.width;
-		var x_pos = (this.canvas.width/2)  - (w/2);
-		var y_pos = this.canvas.height * pct;
+		// Calculate the size and position of the image (center it)
+		var img_h = this.canvas.height;
+		var ratio = this.canvas.height / this.image.height;
+		var img_w = this.image.width * ratio;
+		var x_pos = (this.canvas.width/2)  - (img_w/2);
 		
 		this.ctx.fillStyle = "rgb(0,0,0)";
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-		this.ctx.drawImage(this.image, x_pos, y_pos, w, h);
 		
+		// Draw the image based on the reveal mode.
+		switch(this.reveal_mode)
+		{
+			case 'move_up':
+				var y_pos = this.canvas.height * pct;
+				this.ctx.drawImage(this.image, x_pos, y_pos, img_w, img_h);
+				break;
+			case 'fade':
+				this.ctx.globalAlpha = this.easeOutCubic(1-pct, 0, 1, 1);
+				this.ctx.drawImage(this.image, x_pos, 0, img_w, img_h);
+				this.ctx.globalAlpha = 1;
+				break;
+			case 'blocks':
+				var i=0;
+				var x_inc = this.image.width / 30;
+				var y_inc = this.image.height / 30;
+				for(var y=0; y<this.image.height; y+=y_inc)
+				{
+					for(var x=0; x<this.image.width; x+=x_inc)
+					{
+						var dx = Math.floor(x*ratio)+x_pos;
+						var dy = Math.floor(y*ratio);
+						var dw = Math.floor(x_inc*ratio);
+						var dh = Math.floor(y_inc*ratio);
+						if(pct < i / 900) this.ctx.drawImage(this.image, x, y, x_inc, y_inc, dx, dy, dw, dh);
+						i++;
+					}
+				}
+				break;
+		}
+
+		
+		// Draw the timer bar
 		this.ctx.fillStyle = "rgb(255,0,0)";
 		this.ctx.fillRect(0, 0, this.canvas.width*pct, 20);
 
@@ -421,7 +463,7 @@ var game =
 		if(this.paused||this.players[p].has_guessed||this.interval_ptr==null) 
 			return;
 		
-		if(this.time_left > this.round_length-1000)
+		if(this.time_left > this.round_length-500)
 			return;
 		
 		if(this.time_left<=0 || this.guesses>=this.players.length) 
