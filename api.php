@@ -1,17 +1,26 @@
 <?php
 ini_set('display_errors', 1);
-error_reporting(E_ALL);
+function exceptions_error_handler($severity, $message, $filename, $lineno) {
+  if (error_reporting() == 0) 
+    return;
+  if (error_reporting() & $severity) 
+    throw new ErrorException($message, 0, $severity, $filename, $lineno);
+}
+set_error_handler('exceptions_error_handler');
+error_reporting(E_ALL ^ E_STRICT);
 session_start();
+
 
 if(isset($_REQUEST['reset'])) session_unset();
 if(!isset($_SESSION['used_urls'])) $_SESSION['used_urls']=array();
 if(!isset($_SESSION['used_titles'])) $_SESSION['used_titles']=array();
 
-
+/*
 $cities = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
 			"portland", "phoenix", "detroit", "denver", "dallas", 
 			"atlanta", "minneapolis", "miami", "washingtondc", "saltlakecity",
 			"vancouver.en", "tokyo", "dublin");
+*/
 
 // ------------------------------------
 function get_url_contents($url)
@@ -48,10 +57,14 @@ class CLSearchPage
 	// ------------------------------------
 	function CLSearchPage($url)
 	{
-		global $_SESSION;
 		$this->url = $url;
+	}	
 	
-		$contents = get_url_contents($url);
+	// ------------------------------------
+	function parse()
+	{
+		global $_SESSION;
+		$contents = get_url_contents($this->url);
 		if(empty($contents)) {
 			throw new Exception("$url is empty!");
 		}
@@ -64,7 +77,7 @@ class CLSearchPage
 			if(!in_array($url, $_SESSION['used_urls'])) $this->subpages[] = $url;
 		}
 		$this->total = count($this->subpages);
-	}	
+	}
 }
 
 
@@ -87,7 +100,12 @@ class CLPage
 	function CLPage($url)
 	{
 		$this->url = $url;
-		$contents = get_url_contents($url);
+	}
+	
+	// --------------------------------
+	function parse()
+	{
+		$contents = get_url_contents($this->url);
 		
 		$document = new DOMDocument();
 		libxml_use_internal_errors(true);
@@ -126,6 +144,7 @@ class CLPage
 			$this->body = str_replace("\n", " ", trim(strip_tags($matches[1])));
 		}
 	}
+	
 	
 	// --------------------------------
 	function blacklisted()
@@ -175,18 +194,19 @@ class API
 	// ---------------------------
 	function get_items()
 	{	
-		global $cities, $_SESSION;
+		global $_REQUEST, $_SESSION;
 	
 		// Reset the city array
 		$this->items = array();
 	
 		// Choose a random city
-		$key = array_rand($cities);
-		$this->city = $cities[$key];
+		$key = array_rand($_REQUEST['cities']);
+		$this->city =  $_REQUEST['cities'][$key];
 	
 		// Parse the search page on Craigslist
 		$url="http://{$this->city}.craigslist.org/search/cas?hasPic=1&query={$this->query}";
 		$this->searchpage =  new CLSearchPage($url);
+		$this->searchpage->parse();
 		
 		if($this->searchpage->total<3) return false;
 		
@@ -198,6 +218,7 @@ class API
 			// Create a new CLPage object using the URL. 
 			// This will parse the page
 			$page = new CLPage($url);
+			$page->parse();
 			$page->city = ucfirst($this->city);
 			
 			// If the page has no images or no title, skip it.

@@ -11,6 +11,7 @@ $num_players = count($players);
 
 // Check for problems
 if(count($_REQUEST['categories'])==0)		header("Location: index.php?error=nocats");
+if(count($_REQUEST['cities'])<2)			header("Location: index.php?error=nocities");
 if($num_players<1||$num_players>3) 			header("Location: index.php?error=playercount");
 ?>
 <!doctype html>
@@ -119,9 +120,9 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		<footer>
 			<table id="answers">
 				<tr>
-					<td id="answer-0"></td>
-					<td id="answer-1"></td>
-					<td id="answer-2"></td>
+					<td id="answer-0" class="answer"></td>
+					<td id="answer-1" class="answer"></td>
+					<td id="answer-2" class="answer"></td>
 				</tr>
 			</table>
 		</footer>
@@ -139,6 +140,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		// Round up some vars to initlaize the game!
 		var players = <?php print json_encode($players); ?>;
 		var cats = ["<?php echo implode('","', $_REQUEST['categories']); ?>"];
+		var cities = ["<?php echo implode('","', $_REQUEST['cities']); ?>"];
 		var num_rounds = <?php print (!isset($_REQUEST['rounds'])||$_REQUEST['rounds']>20)?10:intval($_REQUEST['rounds']); ?>;
 		
 		// Attach the key listener for this window to the game
@@ -146,7 +148,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		$(window).keypress( function(e){ game.key_pressed(e); } );
 		
 		// Initialize the game with players, categories, rounds, and the end game callback
-		game.init(players, cats, num_rounds, end_game);
+		game.init(players, cats, cities, num_rounds, end_game);
 		
 		begin_game();
 

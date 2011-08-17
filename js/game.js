@@ -14,6 +14,9 @@ var game =
 	categories: 	new Array(),	// An array of strings (m4m, w4m, etc)
 	category:		null,			// The randomly chosen category
 	
+	cities:			new Array(),	// An array of all cities
+	city: 			null,			// The city that the current round is from
+	
 	items: 			new Array(),	// Craigslist pages loaded from the API
 	item_i:			null,			// The randomly chosen index (0-2)
 	image: 			new Image(),	// An image loaded from the random item (items[item_i].image)
@@ -22,7 +25,7 @@ var game =
 	applause: 		null,
 	trombone: 		null,
 	
-	city: 			null,			// The city that the current round is from
+	
 	time_left: 		0,				// The time remaining in the current round
 	round_length: 	10000,			// The duration of a single round in ms
 	tick_interval: 	20,				//
@@ -36,10 +39,11 @@ var game =
 	end_callback: 	null,
 	
 	// ------------------------------------------
-	init: function(_players, _categories, _num_rounds, _end_callback)
+	init: function(_players, _categories, _cities, _num_rounds, _end_callback)
 	{	
 		this.players = _players;
 		this.categories = _categories;
+		this.cities = _cities;
 		this.num_rounds = _num_rounds;
 		this.end_callback = _end_callback;
 		
@@ -155,9 +159,9 @@ var game =
 		// Reset the items array, the guess count, and the css colors
 		this.reset_round();
 	
-		// Pick a new category and put it into the info div
+		// Pick a new category
 		var i = Math.floor( Math.random() * this.categories.length );
-		this.category = this.categories[i];
+		this.category = this.categories[i];		
 		
 		$("#round_info").html("Loading "+this.category+' <img src="gs/ajax-loader.gif" />');
 		
@@ -165,7 +169,7 @@ var game =
 		this.xhr_ptr = $.ajax({
 			url: "api.php",
 			dataType: 'json',
-			data: {'query': this.category },
+			data: {'query': this.category, 'cities': this.cities },
 			success: function(response) { game.ajax_success(response); }
 		});
 	},

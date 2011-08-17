@@ -131,6 +131,21 @@
 						</label>
 						<input type="text" name="players[]" />
 						
+						<label>Cities
+						<span class="small">which cities should be included in your game?</span>
+						</label>
+						<div class="buttongroup">
+						<?php
+						$cities = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
+							"portland", "phoenix", "detroit", "denver", "dallas", 
+							"atlanta", "minneapolis", "miami", "washingtondc", "saltlakecity",
+							"vancouver.en", "tokyo", "dublin");
+						foreach($cities as $city):
+						?>
+						<input name="cities[]" value="<?php echo $city; ?>" type="checkbox" checked  /> <?php echo ucfirst($city); ?><br />
+						<?php endforeach; ?>
+						</div>
+						
 						<label>Categories
 						<span class="small">which categories do you want included in your game?</span>
 						</label>
