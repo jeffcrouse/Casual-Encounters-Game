@@ -10,13 +10,13 @@
 var game =
 {	
 	players: 		new Array(),	// An array of player objects
-	num_rounds: 	0,	
+	
 	categories: 	new Array(),	// An array of strings (m4m, w4m, etc)
 	category:		null,			// The randomly chosen category
 	
 	items: 			new Array(),	// Craigslist pages loaded from the API
 	item_i:			null,			// The randomly chosen index (0-2)
-	image: 			null,			// An image loaded from the random item (items[item_i].image)
+	image: 			new Image(),	// An image loaded from the random item (items[item_i].image)
 	
 	// sounds
 	applause: 		null,
@@ -29,6 +29,7 @@ var game =
 	xhr_ptr: 		null,			// ajax pointer
 	interval_ptr: 	null,			// tick interval pointer
 	guesses: 		0,				// The number of guesses that have been made in the current round
+	num_rounds: 	0,				// Total number of founds
 	round: 			0,				// The current round
 	paused: 		false,			// Whether the game is currently paused
 	
@@ -72,27 +73,27 @@ var game =
 		// Pause and player 1 guess buttons (stay the same no matter what)
 		switch(character)
 		{
-			case ' ':	game.toggle_paused();break;
-			case 'q':	game.guess(0, 0);	break;
-			case 'w': 	game.guess(0, 1);	break;
-			case 'e':	game.guess(0, 2);	break;
+			case ' ':	this.toggle_paused();break;
+			case 'q':	this.guess(0, 0);	break;
+			case 'w': 	this.guess(0, 1);	break;
+			case 'e':	this.guess(0, 2);	break;
 		}
 		
-		if(game.players.length==2) switch(character)
+		if(this.players.length==2) switch(character)
 		{
-			case 'i': 	game.guess(1, 0);	break;
-			case 'o': 	game.guess(1, 1);	break;
-			case 'p': 	game.guess(1, 2);	break;
+			case 'i': 	this.guess(1, 0);	break;
+			case 'o': 	this.guess(1, 1);	break;
+			case 'p': 	this.guess(1, 2);	break;
 		}
 
-		if(game.players.length==3) switch(character)
+		if(this.players.length==3) switch(character)
 		{
-			case 'c':	game.guess(1, 0);	break;
-			case 'v': 	game.guess(1, 1);	break;
-			case 'b':	game.guess(1, 2);	break;
-			case 'i': 	game.guess(2, 0);	break;
-			case 'o': 	game.guess(2, 1);	break;
-			case 'p': 	game.guess(2, 2);	break;
+			case 'c':	this.guess(1, 0);	break;
+			case 'v': 	this.guess(1, 1);	break;
+			case 'b':	this.guess(1, 2);	break;
+			case 'i': 	this.guess(2, 0);	break;
+			case 'o': 	this.guess(2, 1);	break;
+			case 'p': 	this.guess(2, 2);	break;
 		}
 	},
 	
@@ -364,6 +365,7 @@ var game =
 			$("#player-"+p+"-name").css('color', 'green');
 			$("#player-"+p+"-score").html( this.players[p].score );
 			$('#answer-'+i).css('color', 'green');
+			this.applause.currentTime=0;
 			this.applause.play();
 			this.end_round();
 		}
@@ -374,6 +376,7 @@ var game =
 			$("#player-"+p+"-name").css('color', 'red');
 			$("#player-"+p+"-score").html( this.players[p].score );
 			$('#answer-'+i).css('color', 'red');
+			this.trombone.currentTime=0;
 			this.trombone.play();
 		}
 		

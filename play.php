@@ -140,7 +140,7 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 		
 		// Attach the key listener for this window to the game
 		// 'game' is defined in game.js
-		$(window).keypress( game.key_pressed );
+		$(window).keypress( function(e){ game.key_pressed(e); } );
 		
 		// Initialize the game with players, categories, rounds, and the end game callback
 		game.init(players, cats, num_rounds, end_game);
