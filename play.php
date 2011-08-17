@@ -39,13 +39,33 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 	
 	<script src="js/libs/modernizr-1.7.min.js"></script>
 	<style type="text/css">	
-		
+		table {
+			width: 100%		
+		}
+		td {
+			text-align: center;
+		}
+		#corner {
+			position: absolute;
+			top: 0;
+			left: 0;
+			z-index: 10;
+		}
+		#targetcanvas {
+			width: 100%;
+			height: 100%;
+			z-index: -1;
+		}
 	</style>
 </head>
 <body>
+
 	<div id="corner"><a href="index.php"><img src="gs/corner.png" /></a></div>
-	<div id="image_holder"><img id="the_image" /></div>
+	
+	<!--<div id="image_holder"><img id="the_image" /></div>-->
+	
 	<div id="container">
+		<canvas id="targetcanvas"></canvas>
 		<header>
 			<table id="top_bar">
 				<tr>
@@ -54,9 +74,9 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 						<span id="player-<?php echo $i; ?>-name"><?php echo $players[$i]['name']; ?></span>  <span id="player-<?php echo $i; ?>-score">0</span>
 						<?php if(strpos($_SERVER['HTTP_USER_AGENT'],'iPad')): ?>
 						<div id="player-<?php echo $i; ?>-buttons">
-							<img src="gs/a.png" onclick="guess(<?php echo $i; ?>, 0);" />
-							<img src="gs/b.png" onclick="guess(<?php echo $i; ?>, 1);" />
-							<img src="gs/c.png" onclick="guess(<?php echo $i; ?>, 2);" />
+							<img src="gs/a.png" onclick="game.guess(<?php echo $i; ?>, 0);" />
+							<img src="gs/b.png" onclick="game.guess(<?php echo $i; ?>, 1);" />
+							<img src="gs/c.png" onclick="game.guess(<?php echo $i; ?>, 2);" />
 						</div>
 						<?php endif; ?>
 					</td>
@@ -65,7 +85,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 				<tr>
 					<td id="info_box" colspan="<?php echo $num_players; ?>">
 						<div id="round_info"></div>
-						<div id="time_display"></div>
+						<!--<div id="time_display"></div>-->
 					</td>
 				</tr>
 			</table>
@@ -105,7 +125,6 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 						
 						<?php endif; ?>
 						
-					
 					</li>
 					<?php if($num_players>1): ?>
 					<li>The player who has the highest score after the specified number of rounds wins!</li>
@@ -141,17 +160,18 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		var players = <?php print json_encode($players); ?>;
 		var cats = ["<?php echo implode('","', $_REQUEST['categories']); ?>"];
 		var cities = ["<?php echo implode('","', $_REQUEST['cities']); ?>"];
-		var num_rounds = <?php print (!isset($_REQUEST['rounds'])||$_REQUEST['rounds']>20)?10:intval($_REQUEST['rounds']); ?>;
+		var num_rounds = <?php print (!isset($_REQUEST['rounds'])||abs($_REQUEST['rounds'])>20)?10:abs(intval($_REQUEST['rounds'])); ?>;
 		
 		// Attach the key listener for this window to the game
 		// 'game' is defined in game.js
 		$(window).keypress( function(e){ game.key_pressed(e); } );
+		$(window).resize(function() { game.window_resize(); });
 		
-		// Initialize the game with players, categories, rounds, and the end game callback
+		// Initialize the game with players, cities, categories, rounds, and the end game callback
 		game.init(players, cats, cities, num_rounds, end_game);
 		
+		
 		begin_game();
-
 	});
 	
 	// --------------------------
@@ -160,7 +180,10 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		// Show the initial dialog box.  Pressing 'I'm Ready!' starts the game.
 		$("#dialog_begin").dialog({width: '700px', title: 'How to play', closeOnEscape: false, buttons: [
 			{	text: "I'm Ready!",
-				click: function() { game.start_round(); }
+				click: function() {
+					$("#dialog_begin").dialog('close');
+					game.start_round();
+				}
 			},
 			{	text: "No, take me back",
 				click: function() { window.location.href = "index.php"; }
@@ -174,7 +197,10 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		var title = (winner==null) ? "Really? No score?" : winner.name+" wins!";
 		$("#dialog_end").dialog({width: '40%', title: title, closeOnEscape: false, buttons: [
 			{	text: "Play Again",
-				click:  function() { game.reset_game(); }
+				click:  function() { 
+					$("#dialog_end").dialog('close');
+					game.reset_game();
+				}
 			},
 			{	text: "Back to Home Screen",
 				click: function() { window.location.href = "index.php"; }

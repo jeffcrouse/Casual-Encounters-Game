@@ -28,7 +28,7 @@ var game =
 	
 	time_left: 		0,				// The time remaining in the current round
 	round_length: 	10000,			// The duration of a single round in ms
-	tick_interval: 	20,				//
+	tick_interval: 	10,				//
 	xhr_ptr: 		null,			// ajax pointer
 	interval_ptr: 	null,			// tick interval pointer
 	guesses: 		0,				// The number of guesses that have been made in the current round
@@ -37,6 +37,9 @@ var game =
 	paused: 		false,			// Whether the game is currently paused
 	
 	end_callback: 	null,
+	
+	canvas:			null,			// The canvas object that we will draw the image on
+	ctx:			null,			// the 2d context of the canvas
 	
 	// ------------------------------------------
 	init: function(_players, _categories, _cities, _num_rounds, _end_callback)
@@ -50,6 +53,11 @@ var game =
 		this.applause = this.make_sound("applause");
 		this.trombone = this.make_sound("sad_trombone");
 
+		this.canvas = document.getElementById("targetcanvas");
+		this.ctx = this.canvas.getContext("2d");
+
+		this.window_resize();
+
 		// if there is only one player, activate 'click' mode
 		if(this.players.length==1)
 		{
@@ -58,15 +66,17 @@ var game =
 			$("#answer-2").click(function(){ game.guess(0, 2); });
 		}
 		
-		var required_divs = new Array("#round_info", "#the_image", 
-			"#time_display", "#answer-1", "#answer-2", "#answer-3",
-			"#dialog_begin", "#dialog_end");
+		// The game assumes that there 
+		var required_divs = new Array("#round_info", "#answer-1", "#answer-2", "#answer-3");
 		for(i in this.players)
+		{
 			required_divs.push( "#player-"+i+"-name" );
+			required_divs.push( "#player-"+i+"-score" );
+		}
+		
 
 		// TO DO: Test if the required divs exist here
-		//if ($("#mydiv").length > 0){
-				
+		//if ($("#mydiv").length > 0){				
 	},
 	
 	
@@ -132,7 +142,7 @@ var game =
 		{
 			if(this.time_left > 0)
 			{
-				this.interval_ptr = setInterval("tick()", tick_interval);
+				this.interval_ptr = setInterval("game.tick()", this.tick_interval);
 				this.paused = false;
 			}
 		}
@@ -154,8 +164,6 @@ var game =
 	start_round: function()
 	{
 		console.log("start_round()");
-		
-		$("#dialog_begin").dialog('close');
 		
 		// Reset the items array, the guess count, and the css colors
 		this.reset_round();
@@ -232,15 +240,16 @@ var game =
 		// function, so only start it if there is currently no tick interval
 		if(this.interval_ptr==null)
 		{
-			// Loop through the items array and put the titles into the correct div
+			this.round++;
+			
+			// Fill the divs
+			$("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
 			for(var i=0; i<this.items.length; i++) 
 			{
-				var title = this.items[i].title;
-				$("#answer-"+i).html(title);
+				$("#answer-"+i).html(this.items[i].title);
 			}
 			
-
-			
+			/*
 			// Cook up some CSS for the image
 			var height = $(window).height();
 			var width = ($(window).height()/this.image.height) * this.image.width;
@@ -249,12 +258,11 @@ var game =
 			
 			// Put the image into the <img>
 			$("#the_image").css(css).attr('src', this.image.src);
-			$("#round_info").html(this.category+" - "+this.city);
-
+			*/
+			
 			console.log("setting interval");
 			this.time_left = this.round_length;
 			this.interval_ptr = setInterval("game.tick()", this.tick_interval);
-			this.round++;
 		}
 		else
 		{
@@ -273,10 +281,20 @@ var game =
 		
 		// TO DO:  I don't know why this has to be 70...
 		// Otherwise, it takes a while to reach the screen in Firefox
-		var top = Math.ceil((this.time_left / this.round_length) * 70 );
+		var pct = this.time_left / this.round_length;
+		
+		var x = (this.canvas.width/2)  - (this.image.width/2);
+		var y = this.canvas.height * pct;
+		
+		this.ctx.fillStyle = "rgb(0,0,0)";
+		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		this.ctx.drawImage(this.image, x, y );
+		
+		this.ctx.fillStyle = "rgb(255,0,0)";
+		this.ctx.fillRect(0, 0, this.canvas.width*pct, 20);
 
-		$("#the_image").css('margin-top', top+"%");
-		$("#time_display").html( this.round+" / "+this.num_rounds+" - " + Math.ceil(this.time_left / 100));
+		//$("#the_image").css('margin-top', top+"%");
+		//$("#time_display").html( Math.ceil(this.time_left / 100));
 		
 		if(this.time_left<=0) 
 		{
@@ -295,7 +313,13 @@ var game =
 	{
 		console.log("end_round()");
 		this.time_left=0;
-		$("#the_image").css('margin-top', "0%");
+		//$("#the_image").css('margin-top', "0%");
+		
+		this.ctx.fillStyle = "rgb(0,0,0)";
+		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+		var x = (this.canvas.width/2)  - (this.image.width/2);
+		this.ctx.drawImage(this.image, x, 0);
+		
 		clearInterval(this.interval_ptr);
 		this.interval_ptr=null;
 		
@@ -344,11 +368,10 @@ var game =
 	// ------------------------------------------
 	reset_game: function()
 	{
-		$("#dialog_end").dialog('close');
 		for(i in game.players)
 		{
 			game.players[i].score = 0;
-			$("#player-"+i+"-score").html(0);
+			$("#player-"+i+"-score").html('0');
 		}
 		game.round=0;
 		game.start_round();
@@ -399,7 +422,7 @@ var game =
 		
 		if(this.item_i==i)	// correct guess
 		{
-			this.players[p].score += this.time_left/10;
+			this.players[p].score += Math.ceil(this.time_left/10);
 			console.log("player "+p+" correct. score is now "+this.players[p].score);
 			$("#player-"+p+"-name").css('color', 'green');
 			$("#player-"+p+"-score").html( this.players[p].score );
@@ -410,7 +433,7 @@ var game =
 		}
 		else			// incorrect guess
 		{
-			this.players[p].score -= this.time_left/20;
+			this.players[p].score -= Math.ceil(this.time_left/20);
 			console.log("player "+p+" wrong.  score is now "+this.players[p].score);
 			$("#player-"+p+"-name").css('color', 'red');
 			$("#player-"+p+"-score").html( this.players[p].score );
@@ -423,6 +446,13 @@ var game =
 		this.guesses++;
 		console.log("guesses="+this.guesses);
 		if(this.guesses>=this.players.length) this.end_round();
-	}
+	},
 	
+	
+	// ------------------------------------------
+	window_resize: function()
+	{
+		$('#targetcanvas').attr('width', $(window).width() );
+		$('#targetcanvas').attr('height', Math.min($(document).height(), $(window).height()) );
+	}
 };
