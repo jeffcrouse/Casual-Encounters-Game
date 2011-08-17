@@ -11,11 +11,7 @@ $num_players = count($players);
 
 // Check for problems
 if(count($_REQUEST['categories'])==0)		header("Location: index.php?error=nocats");
-if($num_players!=2 && $num_players!=3) 		header("Location: index.php?error=playercount");
-
-$keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
-	? "using the blue, green, and red buttons"
-	: "using the keys in the diagram below";
+if($num_players<1||$num_players>3) 			header("Location: index.php?error=playercount");
 ?>
 <!doctype html>
 <!--[if lt IE 7 ]> <html lang="en" class="no-js ie6"> <![endif]-->
@@ -80,34 +76,41 @@ $keys_note = strpos($_SERVER['HTTP_USER_AGENT'],'iPad')
 					<li>When you press "I'm Ready" below, three titles will appear on the bottom of the screen. 
 						Each is a title from a Casual Encounters posting. The city and category is shown on the top of the screen.
 					</li>
-					<li>A timer will begin and an image will begin to appear from the bottom of the screen.  The faster
-						you guess the correct headline (<?php echo $keys_note; ?>), the more points you receive.  HOWEVER,
-						if you guess incorrectly, you will also lose more points!
+					<li>
+						A timer will begin and an image will begin to appear from the bottom of the screen. 
 						
-						<?php if(!strpos($_SERVER['HTTP_USER_AGENT'],'iPad')): ?>
+						<?php if(strpos($_SERVER['HTTP_USER_AGENT'],'iPad')): ?>
+						
+							The faster you guess the correct headline using the blue, green, and red buttons,
+							the more points you receive.  
+						
+						<?php elseif($num_players==1): ?>
+						
+							The faster you guess the correct headline by clicking on the correct title, 
+							the more points you receive.  
+						
+						<?php else: ?>
+						
+							The faster you guess the correct headline using the keys in the diagram below, 
+							the more points you receive.  
+						
 							<div style="text-align: center;">
 							<?php if($num_players==2): ?>
-							<img src="gs/2-players.png" />
+								<img src="gs/2-players.png" />
 							<?php else: ?>
-							<img src="gs/3-players.png" />
+								<img src="gs/3-players.png" />
 							<?php endif; ?>
 							</div>
+						
 						<?php endif; ?>
 						
-						</li>
+						HOWEVER, if you guess incorrectly, you will also lose more points!	
+					</li>
+					<?php if($num_players>1): ?>
 					<li>The player who has the highest score after the specified number of rounds wins!</li>
+					<?php endif; ?>
 					<li class="warning">PLEASE NOTE:  This is a very explicit game and is definitely NSFW!</li>
 				</ul>
-				<!--
-				<h2>Player 1:<h2>
-				<p>use the 'q' key for the left option, the 'w' key for the middle option, and the 'e' key for the right option.</p>
-				<h2>Player 2: </h2>
-				<?php if($num_players==3): ?>
-				<p>Use the 'c' key for the left option, the 'v' key for the middle option, and the 'b' key for the right option.</p>
-				<h2>Player 3: </h2>
-				<?php endif;?>
-				<p>Use the 'i' key for the left option, the 'o' key for the middle option, and the 'p' key for the right option.</p>
-				-->
 				<p>Good luck!</p>
 			</div>
 			<div id="dialog_end" class="dialog_boxes">Congratulations!  Wanna play again?</div>

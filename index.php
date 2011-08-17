@@ -121,7 +121,7 @@
 						</label>
 						<input type="text" name="players[]" class="required" value="Thing One" />
 						
-						<label>Player Two*
+						<label>Player Two
 						<span class="small">player two name</span>
 						</label>
 						<input type="text" name="players[]" class="required" value="Thing Two"/>

@@ -43,33 +43,16 @@ var game =
 		this.num_rounds = _num_rounds;
 		this.end_callback = _end_callback;
 		
-		// Load applause sound
-		this.applause = document.createElement("audio");
-		var source = document.createElement('source');
-		if (this.applause.canPlayType('audio/mpeg;')) {
-			source.type= 'audio/mpeg';
-			source.src= 'sounds/applause.mp3';
-		} else {
-			source.type= 'audio/ogg';
-			source.src= 'sounds/applause.ogg';
+		this.applause = this.make_sound("applause");
+		this.trombone = this.make_sound("sad_trombone");
+
+		if(this.players.length==1)
+		{
+			$("#answer-0").click(function(){ game.guess(0, 0); });
+			$("#answer-1").click(function(){ game.guess(0, 1); });
+			$("#answer-2").click(function(){ game.guess(0, 2); });
 		}
-		this.applause.appendChild(source);
-		this.applause.load();
 		
-		// Load sad trombone sound
-		this.trombone = document.createElement("audio");
-		var source = document.createElement('source');
-		if (this.trombone.canPlayType('audio/mpeg;')) {
-			source.type= 'audio/mpeg';
-			source.src= 'sounds/sad_trombone.mp3';
-		} else {
-			source.type= 'audio/ogg';
-			source.src= 'sounds/sad_trombone.ogg';
-		}
-		this.trombone.appendChild(source);
-		this.trombone.load();
-
-
 		var required_divs = new Array("#round_info", "#the_image", 
 			"#time_display", "#answer-1", "#answer-2", "#answer-3",
 			"#dialog_begin", "#dialog_end");
@@ -83,23 +66,40 @@ var game =
 	
 	
 	// ------------------------------------------
-	// TO DO:  Oooh, messy.  Fix this
+	make_sound: function(name)
+	{
+		// Load sad trombone sound
+		var audio = document.createElement("audio");
+		var source = document.createElement('source');
+		if (audio.canPlayType('audio/mpeg;')) {
+			source.type= 'audio/mpeg';
+			source.src= 'sounds/'+name+'.mp3';
+		} else {
+			source.type= 'audio/ogg';
+			source.src= 'sounds/'+name+'.ogg';
+		}
+		audio.appendChild(source);
+		audio.load();
+		return audio;
+	},
+	
+	
+	// ------------------------------------------
 	key_pressed: function(e) 
 	{
 		var character = String.fromCharCode(e.keyCode ? e.keyCode : e.which); 
 		console.log("keyPress " + character);
 		
-		// Pause and player 1 guess buttons (stay the same no matter what)
-		switch(character)
-		{
-			case ' ':	this.toggle_paused();break;
-			case 'q':	this.guess(0, 0);	break;
-			case 'w': 	this.guess(0, 1);	break;
-			case 'e':	this.guess(0, 2);	break;
-		}
+		if(character==' ')
+			this.toggle_paused();
+		
+		if(this.players.length==1) return;
 		
 		if(this.players.length==2) switch(character)
 		{
+			case 'q':	this.guess(0, 0);	break;
+			case 'w': 	this.guess(0, 1);	break;
+			case 'e':	this.guess(0, 2);	break;
 			case 'i': 	this.guess(1, 0);	break;
 			case 'o': 	this.guess(1, 1);	break;
 			case 'p': 	this.guess(1, 2);	break;
@@ -107,6 +107,9 @@ var game =
 
 		if(this.players.length==3) switch(character)
 		{
+			case 'q':	this.guess(0, 0);	break;
+			case 'w': 	this.guess(0, 1);	break;
+			case 'e':	this.guess(0, 2);	break;
 			case 'c':	this.guess(1, 0);	break;
 			case 'v': 	this.guess(1, 1);	break;
 			case 'b':	this.guess(1, 2);	break;
@@ -120,16 +123,19 @@ var game =
 	// ------------------------------------------
 	toggle_paused: function()
 	{
-		if(paused)
+		if(this.paused)
 		{
-			this.interval_ptr = setInterval("tick()", tick_interval);
-			this.paused=false;
+			if(this.time_left > 0)
+			{
+				this.interval_ptr = setInterval("tick()", tick_interval);
+				this.paused = false;
+			}
 		}
 		else
 		{
-			$("#time_display").html( "paused" );
-			
 			if(this.interval_ptr==null) return;
+			
+			$("#time_display").html( "paused" );			
 			clearInterval(this.interval_ptr);
 			this.interval_ptr=null;
 			this.paused=true;
@@ -150,12 +156,13 @@ var game =
 		this.reset_round();
 	
 		// Pick a new category and put it into the info div
-		this.category = this.categories[Math.floor(Math.random()*this.categories.length)];
+		var i = Math.floor( Math.random() * this.categories.length );
+		this.category = this.categories[i];
 		
 		$("#round_info").html("Loading "+this.category+' <img src="gs/ajax-loader.gif" />');
 		
 		// Make the call to the API
-		xhr_ptr = $.ajax({
+		this.xhr_ptr = $.ajax({
 			url: "api.php",
 			dataType: 'json',
 			data: {'query': this.category },
@@ -221,9 +228,14 @@ var game =
 		if(this.interval_ptr==null)
 		{
 			// Loop through the items array and put the titles into the correct div
-			for(i=0; i<this.items.length; i++) 
-				$("#answer-"+i).html(this.items[i].title);
+			for(var i=0; i<this.items.length; i++) 
+			{
+				var title = this.items[i].title;
+				$("#answer-"+i).html(title);
+			}
+			
 
+			
 			// Cook up some CSS for the image
 			var height = $(window).height();
 			var width = ($(window).height()/this.image.height) * this.image.width;
