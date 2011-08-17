@@ -165,11 +165,10 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		// Attach the key listener for this window to the game
 		// 'game' is defined in game.js
 		$(window).keypress( function(e){ game.key_pressed(e); } );
-		$(window).resize(function() { game.window_resize(); });
+		$(window).resize( function() { game.window_resize(); });
 		
 		// Initialize the game with players, cities, categories, rounds, and the end game callback
 		game.init(players, cats, cities, num_rounds, end_game);
-		
 		
 		begin_game();
 	});
@@ -181,7 +180,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		$("#dialog_begin").dialog({width: '700px', title: 'How to play', closeOnEscape: false, buttons: [
 			{	text: "I'm Ready!",
 				click: function() {
-					$("#dialog_begin").dialog('close');
+					$(this).dialog('close');
 					game.start_round();
 				}
 			},
@@ -198,7 +197,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		$("#dialog_end").dialog({width: '40%', title: title, closeOnEscape: false, buttons: [
 			{	text: "Play Again",
 				click:  function() { 
-					$("#dialog_end").dialog('close');
+					$(this).dialog('close');
 					game.reset_game();
 				}
 			},

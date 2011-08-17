@@ -40,7 +40,7 @@ var game =
 	
 	canvas:			null,			// The canvas object that we will draw the image on
 	ctx:			null,			// the 2d context of the canvas
-	
+
 	// ------------------------------------------
 	init: function(_players, _categories, _cities, _num_rounds, _end_callback)
 	{	
@@ -142,6 +142,7 @@ var game =
 		{
 			if(this.time_left > 0)
 			{
+				$("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
 				this.interval_ptr = setInterval("game.tick()", this.tick_interval);
 				this.paused = false;
 			}
@@ -150,7 +151,7 @@ var game =
 		{
 			if(this.interval_ptr==null) return;
 			
-			$("#time_display").html( "paused" );			
+			$("#round_info").html( "paused" );			
 			clearInterval(this.interval_ptr);
 			this.interval_ptr=null;
 			this.paused=true;
@@ -283,12 +284,14 @@ var game =
 		// Otherwise, it takes a while to reach the screen in Firefox
 		var pct = this.time_left / this.round_length;
 		
-		var x = (this.canvas.width/2)  - (this.image.width/2);
-		var y = this.canvas.height * pct;
+		var h = this.canvas.height;
+		var w = (this.canvas.height / this.image.height) * this.image.width;
+		var x_pos = (this.canvas.width/2)  - (w/2);
+		var y_pos = this.canvas.height * pct;
 		
 		this.ctx.fillStyle = "rgb(0,0,0)";
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-		this.ctx.drawImage(this.image, x, y );
+		this.ctx.drawImage(this.image, x_pos, y_pos, w, h);
 		
 		this.ctx.fillStyle = "rgb(255,0,0)";
 		this.ctx.fillRect(0, 0, this.canvas.width*pct, 20);
@@ -317,8 +320,11 @@ var game =
 		
 		this.ctx.fillStyle = "rgb(0,0,0)";
 		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-		var x = (this.canvas.width/2)  - (this.image.width/2);
-		this.ctx.drawImage(this.image, x, 0);
+		var h = this.canvas.height;
+		var w = (this.canvas.height / this.image.height) * this.image.width;
+		var x = (this.canvas.width/2)  - (w/2);
+
+		this.ctx.drawImage(this.image, x, 0, w, h);
 		
 		clearInterval(this.interval_ptr);
 		this.interval_ptr=null;
@@ -326,7 +332,7 @@ var game =
 		if(this.round < this.num_rounds)
 		{
 			console.log("starting new round in 2 seconds");
-			setTimeout('game.start_round()', 2000);
+			setTimeout('game.start_round()', 5000);
 		}
 		else this.end_game();
 	},
@@ -415,8 +421,13 @@ var game =
 		if(this.paused||this.players[p].has_guessed||this.interval_ptr==null) 
 			return;
 		
+		if(this.time_left > this.round_length-1000)
+			return;
+		
 		if(this.time_left<=0 || this.guesses>=this.players.length) 
 			alert("ERROR! SANITY IS BROKEN!");
+		
+
 		
 		this.players[p].has_guessed = true;
 		
