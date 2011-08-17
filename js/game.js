@@ -50,6 +50,7 @@ var game =
 		this.applause = this.make_sound("applause");
 		this.trombone = this.make_sound("sad_trombone");
 
+		// if there is only one player, activate 'click' mode
 		if(this.players.length==1)
 		{
 			$("#answer-0").click(function(){ game.guess(0, 0); });
@@ -261,6 +262,8 @@ var game =
 		}
 	},
 
+
+
 	// ------------------------------------------
 	// This function is called every tick_interval millis
 	// and is started in start_round()
@@ -350,6 +353,7 @@ var game =
 		game.round=0;
 		game.start_round();
 	},
+	
 	
 	// ------------------------------------------
 	// called from end_game()

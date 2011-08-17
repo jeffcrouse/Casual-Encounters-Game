@@ -1,5 +1,6 @@
 <?php
 ini_set('display_errors', 1);
+// Turn errors into exceptions
 function exceptions_error_handler($severity, $message, $filename, $lineno) {
   if (error_reporting() == 0) 
     return;
@@ -8,19 +9,13 @@ function exceptions_error_handler($severity, $message, $filename, $lineno) {
 }
 set_error_handler('exceptions_error_handler');
 error_reporting(E_ALL ^ E_STRICT);
+
+// Deal with session and session vars
 session_start();
+if(isset($_REQUEST['reset'])) 			session_unset();
+if(!isset($_SESSION['used_urls'])) 		$_SESSION['used_urls']=array();
+if(!isset($_SESSION['used_titles'])) 	$_SESSION['used_titles']=array();
 
-
-if(isset($_REQUEST['reset'])) session_unset();
-if(!isset($_SESSION['used_urls'])) $_SESSION['used_urls']=array();
-if(!isset($_SESSION['used_titles'])) $_SESSION['used_titles']=array();
-
-/*
-$cities = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
-			"portland", "phoenix", "detroit", "denver", "dallas", 
-			"atlanta", "minneapolis", "miami", "washingtondc", "saltlakecity",
-			"vancouver.en", "tokyo", "dublin");
-*/
 
 // ------------------------------------
 function get_url_contents($url)
@@ -200,8 +195,18 @@ class API
 		$this->items = array();
 	
 		// Choose a random city
-		$key = array_rand($_REQUEST['cities']);
-		$this->city =  $_REQUEST['cities'][$key];
+		$valid_cities = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
+			"portland", "phoenix", "detroit", "denver", "dallas", 
+			"atlanta", "minneapolis", "miami", "washingtondc", "saltlakecity",
+			"vancouver.en", "tokyo", "dublin");
+			
+		if(!isset($_REQUEST['cities']) || count($_REQUEST['cities'])<1)
+			$_REQUEST['cities']=$valid_cities;
+		
+		shuffle($_REQUEST['cities']);
+		$this->city = array_pop($_REQUEST['cities']);
+		if(!in_array($this->city, $valid_cities))
+			throw new Exception("{$this->city} is not a valid city");
 	
 		// Parse the search page on Craigslist
 		$url="http://{$this->city}.craigslist.org/search/cas?hasPic=1&query={$this->query}";

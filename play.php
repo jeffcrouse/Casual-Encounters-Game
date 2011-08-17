@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 $players = array();
 foreach($_REQUEST['players'] as $player)
 	if(!empty($player)) 
-		$players[] = array('name'=>$player, 'score'=>0, 'has_guessed'=>false);
+		$players[] = array('name'=>substr($player, 0, 10), 'score'=>0, 'has_guessed'=>false);
 $num_players = count($players);
 
 // Check for problems
@@ -105,7 +105,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 						
 						<?php endif; ?>
 						
-						HOWEVER, if you guess incorrectly, you will also lose more points!	
+					
 					</li>
 					<?php if($num_players>1): ?>
 					<li>The player who has the highest score after the specified number of rounds wins!</li>

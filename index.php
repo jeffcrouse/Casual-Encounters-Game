@@ -35,7 +35,7 @@
 		}
 		form {
 			margin:0 auto;
-			width:400px;
+			width:500px;
 			padding:14px;
 		}
 		.stylized h1 {
@@ -70,7 +70,7 @@
 			font-size:12px;
 			padding:4px 2px;
 			border:solid 1px #aacfe4;
-			width:200px;
+			width:300px;
 			margin:2px 0 20px 10px;
 		}
 
@@ -111,7 +111,7 @@
 
 					<form id="play" class="stylized" method="get" action="play.php">
 						<h1>I'm ready to play!</h1>
-						<p>Please provide names for up to three players and the categories that you would like to use in your game.<br />
+						<p>Please provide names for up to three players and the cities and categories that you would like to use in your game.<br />
 						<br />
 						Confused?  Check out the "What is this?" tab!
 						</p>
@@ -119,17 +119,17 @@
 						<label>Player One*
 						<span class="small">player one name</span>
 						</label>
-						<input type="text" name="players[]" class="required" value="Thing One" />
+						<input type="text" name="players[]" class="required" value="Thing One" maxlength="10" />
 						
 						<label>Player Two
 						<span class="small">player two name</span>
 						</label>
-						<input type="text" name="players[]" class="required" value="Thing Two"/>
+						<input type="text" name="players[]" value="Thing Two" maxlength="10" />
 						
 						<label>Player Three
 						<span class="small">player three name</span>
 						</label>
-						<input type="text" name="players[]" />
+						<input type="text" name="players[]"  maxlength="9" />
 						
 						<label>Cities
 						<span class="small">which cities should be included in your game?</span>
@@ -142,7 +142,7 @@
 							"vancouver.en", "tokyo", "dublin");
 						foreach($cities as $city):
 						?>
-						<input name="cities[]" value="<?php echo $city; ?>" type="checkbox" checked  /> <?php echo ucfirst($city); ?><br />
+						<input name="cities[]" value="<?php echo $city; ?>" type="checkbox" checked  /> <a target="_blank" href="http://<?php echo $city; ?>.craigslist.org/search/cas?hasPic=1"><?php echo ucfirst($city); ?></a><br />
 						<?php endforeach; ?>
 						</div>
 						
@@ -150,19 +150,19 @@
 						<span class="small">which categories do you want included in your game?</span>
 						</label>
 						<div class="buttongroup">
-							<input name="categories[]" value="M4W" type="checkbox" checked  /> M4W<br />
-							<input name="categories[]" value="W4M" type="checkbox" checked  /> W4M<br />
-							<input name="categories[]" value="M4M" type="checkbox" checked  /> M4M<br />
-							<input name="categories[]" value="W4W" type="checkbox" checked  /> W4W<br />
-							<input name="categories[]" value="T4M" type="checkbox" checked  /> T4M<br />
-							<input name="categories[]" value="M4T" type="checkbox" checked  /> M4T<br />
+							<input name="categories[]" value="M4W" type="checkbox" checked  /> M4W (Man seeks Woman)<br />
+							<input name="categories[]" value="W4M" type="checkbox" checked  /> W4M (Woman seeks Man)<br />
+							<input name="categories[]" value="M4M" type="checkbox" checked  /> M4M (Man seeks Man)<br />
+							<input name="categories[]" value="W4W" type="checkbox" checked  /> W4W (Woman seeks Woman)<br />
+							<input name="categories[]" value="T4M" type="checkbox" checked  /> T4M (Transexual seeks Male)<br />
+							<input name="categories[]" value="M4T" type="checkbox" checked  /> M4T (Male seeks Transexual)<br />
 							<a href="#" id="more_options_link">more options</a>
 							
 							<div id="more_options">
-								<input name="categories[]" value="mw4mw" type="checkbox" /> MW4MW<br />
-								<input name="categories[]" value="mw4w" type="checkbox" /> MW4W<br />
-								<input name="categories[]" value="mw4m" type="checkbox" /> MW4M<br />
-								<input name="categories[]" value="w4mw" type="checkbox" /> W4MW<br />
+								<input name="categories[]" value="mw4mw" type="checkbox" /> MW4MW (Man&Woman seeks Man&Woman)<br />
+								<input name="categories[]" value="mw4w" type="checkbox" /> MW4W (Man&Woman seeks Woman)<br />
+								<input name="categories[]" value="mw4m" type="checkbox" /> MW4M (Man&Woman seeks Man)<br />
+								<input name="categories[]" value="w4mw" type="checkbox" /> W4MW (Woman seeks Man&Woman)<br />
 								<input name="categories[]" value="m4mw" type="checkbox" /> M4MW<br />
 								<input name="categories[]" value="w4ww" type="checkbox" /> W4WW<br />
 								<input name="categories[]" value="m4mm" type="checkbox" /> M4MM<br />
