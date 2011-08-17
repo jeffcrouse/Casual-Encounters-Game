@@ -43,13 +43,32 @@ var game =
 		this.num_rounds = _num_rounds;
 		this.end_callback = _end_callback;
 		
-		this.applause = document.createElement('audio');
-		this.applause.setAttribute('src', 'sounds/applause.mp3');
-		this.applause.load()
-	
-		this.trombone = document.createElement('audio');
-		this.trombone.setAttribute('src', 'sounds/sad_trombone.mp3' );
+		// Load applause sound
+		this.applause = document.createElement("audio");
+		var source = document.createElement('source');
+		if (this.applause.canPlayType('audio/mpeg;')) {
+			source.type= 'audio/mpeg';
+			source.src= 'sounds/applause.mp3';
+		} else {
+			source.type= 'audio/ogg';
+			source.src= 'sounds/applause.ogg';
+		}
+		this.applause.appendChild(source);
+		this.applause.load();
+		
+		// Load sad trombone sound
+		this.trombone = document.createElement("audio");
+		var source = document.createElement('source');
+		if (this.trombone.canPlayType('audio/mpeg;')) {
+			source.type= 'audio/mpeg';
+			source.src= 'sounds/sad_trombone.mp3';
+		} else {
+			source.type= 'audio/ogg';
+			source.src= 'sounds/sad_trombone.ogg';
+		}
+		this.trombone.appendChild(source);
 		this.trombone.load();
+
 
 		var required_divs = new Array("#round_info", "#the_image", 
 			"#time_display", "#answer-1", "#answer-2", "#answer-3",
