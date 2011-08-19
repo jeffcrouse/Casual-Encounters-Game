@@ -5,8 +5,8 @@ error_reporting(E_ALL);
 // Make an array of non-empty player names
 $players = array();
 foreach($_REQUEST['players'] as $player)
-	if(!empty($player)) 
-		$players[] = array('name'=>substr($player, 0, 10), 'score'=>0, 'has_guessed'=>false);
+	if(!empty($player)) $players[] = substr($player, 0, 10);
+	
 $num_players = count($players);
 
 // Check for problems
@@ -71,7 +71,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 				<tr>
 					<?php for($i=0; $i<$num_players; $i++): ?>
 					<td id="player-0">
-						<span id="player-<?php echo $i; ?>-name"><?php echo $players[$i]['name']; ?></span>  <span id="player-<?php echo $i; ?>-score">0</span>
+						<span id="player-<?php echo $i; ?>-name"><?php echo $players[$i]; ?></span>  <span id="player-<?php echo $i; ?>-score">0</span>
 						<?php if(strpos($_SERVER['HTTP_USER_AGENT'],'iPad')): ?>
 						<div id="player-<?php echo $i; ?>-buttons">
 							<img src="gs/a.png" onclick="game.guess(<?php echo $i; ?>, 0);" />
@@ -134,6 +134,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 				<p>Good luck!</p>
 			</div>
 			<div id="dialog_end" class="dialog_boxes">Congratulations!  Wanna play again?</div>
+
 		</div>
 
 		<footer>
@@ -151,62 +152,88 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 	<script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
 
 	<script type="text/javascript" src="js/libs/jquery-ui-1.8.15.custom.min.js"></script>
+	<script type="text/javascript" src="js/libs/processing-js-1.2.3/processing-1.2.3.js"></script>
 	<script type="text/javascript" src="js/game.js"></script>
+	
+    <script type="text/processing" data-processing-target="targetcanvas">
 
-	<script>
-	$(function() {
-				
 		// Round up some vars to initlaize the game!
-		var players = <?php print json_encode($players); ?>;
+		var players = ["<?php echo implode('","', $players); ?>"];
 		var cats = ["<?php echo implode('","', $_REQUEST['categories']); ?>"];
 		var cities = ["<?php echo implode('","', $_REQUEST['cities']); ?>"];
 		var num_rounds = <?php print (!isset($_REQUEST['rounds'])||abs($_REQUEST['rounds'])>20)?10:abs(intval($_REQUEST['rounds'])); ?>;
+		var p5 = Processing.getInstanceById('targetcanvas');
 		
-		// Attach the key listener for this window to the game
-		// 'game' is defined in game.js
+		$(window).resize( function() { resize(); });
 		$(window).keypress( function(e){ game.key_pressed(e); } );
-		$(window).resize( function() { game.window_resize(); });
+
+		// --------------------------
+		void setup()
+		{
+			resize();
+				
+			// Initialize the game with players, cities, categories, rounds, and the end game callback
+			game.init(players, cats, cities, num_rounds, p5, show_end_dialog);
+
+			show_begin_dialog();
+		}
 		
-		// Initialize the game with players, cities, categories, rounds, and the end game callback
-		game.init(players, cats, cities, num_rounds, end_game);
+		// --------------------------
+		void draw()
+		{
+			background(0);
+			//try
+			//{			
+				game.update( frameRate );	//stupid bug: http://groups.google.com/group/processingjs/browse_thread/thread/c64860f5af5e6e1b
+				game.draw();
+			//} catch(err) {
+			//	console.log(err);
+			//}
+		}
 		
-		begin_game();
-	});
-	
-	// --------------------------
-	function begin_game()
-	{
-		// Show the initial dialog box.  Pressing 'I'm Ready!' starts the game.
-		$("#dialog_begin").dialog({width: '700px', title: 'How to play', closeOnEscape: false, buttons: [
-			{	text: "I'm Ready!",
-				click: function() {
-					$(this).dialog('close');
-					game.start_round();
+		// --------------------------
+		void resize()
+		{
+			var w = $(window).width();
+			var h = Math.max( $(document).height(), $(window).height() );
+			size(w, h);
+		}
+		
+		// --------------------------
+		function show_begin_dialog()
+		{
+			// Show the initial dialog box.  Pressing 'I'm Ready!' starts the game.
+			$("#dialog_begin").dialog({width: '700px', title: 'How to play', closeOnEscape: false, buttons: [
+				{	text: "I'm Ready!",
+					click: function() {
+						$(this).dialog('close');
+						game.start_round();
+					}
+				},
+				{	text: "No, take me back",
+					click: function() { window.location.href = "index.php"; }
 				}
-			},
-			{	text: "No, take me back",
-				click: function() { window.location.href = "index.php"; }
-			}
-		] });
-	}
-	
-	// --------------------------
-	function end_game(winner)
-	{
-		var title = (winner==null) ? "Really? No score?" : winner.name+" wins!";
-		$("#dialog_end").dialog({width: '40%', title: title, closeOnEscape: false, buttons: [
-			{	text: "Play Again",
-				click:  function() { 
-					$(this).dialog('close');
-					game.reset_game();
+			] });
+		}
+		
+		// --------------------------
+		function show_end_dialog(winner)
+		{
+			var title = (winner==null) ? "Really? No score?" : winner.name+" wins!";
+			$("#dialog_end").dialog({width: '40%', title: title, closeOnEscape: false, buttons: [
+				{	text: "Play Again",
+					click:  function() { 
+						$(this).dialog('close');
+						game.reset_game();
+					}
+				},
+				{	text: "Back to Home Screen",
+					click: function() { window.location.href = "index.php"; }
 				}
-			},
-			{	text: "Back to Home Screen",
-				click: function() { window.location.href = "index.php"; }
-			}
-		] });
-	}
-	</script>
+			] });
+		}
+		
+    </script>
 	
 	<!--[if lt IE 7 ]>
 	<script src="js/libs/dd_belatedpng.js"></script>

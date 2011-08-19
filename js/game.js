@@ -20,47 +20,41 @@ var game =
 	items: 			[],				// Craigslist pages loaded from the API
 	item_i:			null,			// The randomly chosen index (0-2)
 	image: 			new Image(),	// An image loaded from the random item (items[item_i].image)
+	pimage:			null,
 	
 	// sounds
 	applause: 		null,
 	trombone: 		null,
 	
-	
-	time_left: 		0,				// The time remaining in the current round
-	round_length: 	10000,			// The duration of a single round in ms
-	tick_interval: 	10,				//
+	time_remaining: 0,				// The time remaining in the current round
+	round_length: 	20,				// The duration of a single round in seconds
 	xhr_ptr: 		null,			// ajax pointer
-	interval_ptr: 	null,			// tick interval pointer
 	guesses: 		0,				// The number of guesses that have been made in the current round
 	num_rounds: 	0,				// Total number of founds
 	round: 			0,				// The current round
 	paused: 		false,			// Whether the game is currently paused
 	
-	end_callback: 	null,
-	
-	canvas:			null,			// The canvas object that we will draw the image on
-	ctx:			null,			// the 2d context of the canvas
+	end_game_callback: 	null,
 
-	reveal_modes:	['move_up', 'fade', 'blocks'],	// Implemented in tick()
+	reveal_modes:	['move_up', 'fade'],	// Implemented in draw()
 	reveal_mode:	null,
+	
+	p5: null,						// The processing instance that we will use to draw 'n stuff
 
 	// ------------------------------------------
-	init: function(_players, _categories, _cities, _num_rounds, _end_callback)
+	init: function(_players, _categories, _cities, _num_rounds, _p5, _end_game_callback)
 	{	
-		this.players = _players;
+		for(i in _players)
+			this.players.push({name: _players[i], score: 0, has_guessed: false});
 		this.categories = _categories;
 		this.cities = _cities;
+		this.p5 = _p5;
 		this.num_rounds = _num_rounds;
-		this.end_callback = _end_callback;
+		this.end_game_callback = _end_game_callback;
 		
 		this.applause = this.make_sound("applause");
 		this.trombone = this.make_sound("sad_trombone");
 
-		this.canvas = document.getElementById("targetcanvas");
-		this.ctx = this.canvas.getContext("2d");
-
-		this.window_resize();
-	
 		// if there is only one player, activate 'click' mode
 		if(this.players.length==1)
 		{
@@ -69,7 +63,7 @@ var game =
 			$("#answer-2").click(function(){ game.guess(0, 2); });
 		}
 		
-		// The game assumes that there 
+		// The game assumes that there some divs on the page
 		var required_divs = new Array("#round_info", "#answer-1", "#answer-2", "#answer-3");
 		for(i in this.players)
 		{
@@ -77,9 +71,7 @@ var game =
 			required_divs.push( "#player-"+i+"-score" );
 		}
 		
-
-		// TO DO: Test if the required divs exist here
-		//if ($("#mydiv").length > 0){				
+		// TO DO: Test if the required divs exist here			
 	},
 	
 	
@@ -100,11 +92,84 @@ var game =
 		return audio;
 	},
 	
+	// ------------------------------------------
+	update: function(frameRate)
+	{
+		if(this.paused || this.time_remaining<=0) return;
+
+		this.time_remaining -= (frameRate / 3600);
+		
+		if(this.time_remaining<=0) 
+		{
+			console.log("time is up");
+			this.end_round();
+		}
+	},
 	
 	// ------------------------------------------
-	key_pressed: function(e) 
+	draw: function()
 	{
-		var character = String.fromCharCode(e.keyCode ? e.keyCode : e.which); 
+		var pct = this.time_remaining / this.round_length;
+	
+		if(this.image.width>0)
+		{
+			// Calculate the size and position of the image (center it)
+			var img_h = this.p5.height;
+			var ratio = this.p5.height / this.image.height;
+			var img_w = this.image.width * ratio;
+			var x_pos = (this.p5.width/2)  - (img_w/2);
+			
+	
+			// Draw the image based on the reveal mode.
+			switch(this.reveal_mode)
+			{
+				case 'move_up':
+					var y_pos = this.p5.height * pct;
+					this.p5.image(this.pimage, x_pos, y_pos, img_w, img_h);
+					break;
+	
+				case 'fade':
+					
+					this.p5.tint(50.0, 50.0, 50.0);
+					this.p5.image(this.pimage, x_pos, 0, img_w, img_h);
+					this.p5.noTint();
+					break;
+				/*
+				case 'blocks':
+					var i=0;
+					var x_inc = this.image.width / 30;
+					var y_inc = this.image.height / 30;
+					for(var y=0; y<this.image.height; y+=y_inc)
+					{
+						for(var x=0; x<this.image.width; x+=x_inc)
+						{
+							if(pct < i / 900) 
+							{
+								var dx = Math.floor(x*ratio)+x_pos;
+								var dy = Math.floor(y*ratio);
+								var dw = Math.floor(x_inc*ratio);
+								var dh = Math.floor(y_inc*ratio);
+								this.ctx.drawImage(this.image, x, y, x_inc, y_inc, dx, dy, dw, dh);
+							}
+							i++;
+						}
+					}
+					break;
+				*/
+			}
+		}
+		
+		this.p5.fill(255, 0, 0);
+		this.p5.rect(0, 0, this.p5.width * pct, 20);
+
+		//$("#the_image").css('margin-top', top+"%");
+		//$("#time_display").html( Math.ceil(this.time_remaining / 100));
+	},
+	
+	// ------------------------------------------
+	key_pressed: function( e ) 
+	{
+		var character = String.fromCharCode(e.keyCode ? e.keyCode : e.which);
 		console.log("keyPress " + character);
 		
 		if(character==' ')
@@ -140,30 +205,16 @@ var game =
 	// ------------------------------------------
 	toggle_paused: function()
 	{
-		if(this.paused)
-		{
-			if(this.time_left > 0)
-			{
-				$("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
-				this.interval_ptr = setInterval("game.tick()", this.tick_interval);
-				this.paused = false;
-			}
-		}
-		else
-		{
-			if(this.interval_ptr==null) return;
-			
-			$("#round_info").html( "paused" );			
-			clearInterval(this.interval_ptr);
-			this.interval_ptr=null;
-			this.paused=true;
-		}
+		console.log("toggle_paused()");
+		this.paused = !this.paused;
+		if(this.paused) $("#round_info").html( "paused" );		
+		else $("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
 	},
 	
 	
 	// ------------------------------------------
 	// Loads 3 'items' from api.php into 'items' var
-	// and then start the tick() interval
+	// start_round() -> ajax_success() -> image_loaded()
 	start_round: function()
 	{
 		console.log("start_round()");
@@ -177,6 +228,7 @@ var game =
 		
 		i = Math.floor( Math.random() * this.reveal_modes.length );
 		this.reveal_mode = this.reveal_modes[i];
+		console.log("reveal mode: "+this.reveal_mode);
 		
 		$("#round_info").html("Loading "+this.category+' <img src="gs/ajax-loader.gif" />');
 		
@@ -190,8 +242,9 @@ var game =
 	},
 
 
-
 	// ------------------------------------------
+	// Parse response, set city, category, choose the correct answer,
+	// load the image from that answer.
 	// called from start_round()
 	ajax_success: function(response)
 	{
@@ -222,7 +275,9 @@ var game =
 			console.log("Loading image "+this.image.src);
 			
 			$(this.image).load(function(){
+			
 				game.image_loaded();
+				
 			}).error(function() { 		
 				// Try again if $(image) didn't load properly
 				console.log("error loading an image. trying again");
@@ -233,47 +288,38 @@ var game =
 
 
 	// ------------------------------------------
-	// called from ajax_success()
+	// called from ajax_success() when image has loaded successfully
+	// This finally kicks off the round
 	image_loaded: function()
 	{
 		console.log("success loading "+this.image.src);
 
+		this.pimage = this.p5.loadImage( this.image.src );
+
 		// get rid of any 'load' function that has been bound
 		// to the $(image) in previous rounds
 		$(this.image).unbind('load');
+
+		this.round++;
 		
-		// The main thing that happens to kick off the round is to start the tick()
-		// function, so only start it if there is currently no tick interval
-		if(this.interval_ptr==null)
-		{
-			this.round++;
-			
-			// Fill the divs
-			$("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
-			for(var i=0; i<this.items.length; i++) 
-			{
-				$("#answer-"+i).html(this.items[i].title);
-			}
-			
-			/*
-			// Cook up some CSS for the image
-			var height = $(window).height();
-			var width = ($(window).height()/this.image.height) * this.image.width;
-			var margin_left = Math.ceil( ($(window).width()/2) - (width/2) );	// center the image
-			var css = {'height': height, 'width': width, 'margin-left': margin_left, 'margin-top': '100%'};
-			
-			// Put the image into the <img>
-			$("#the_image").css(css).attr('src', this.image.src);
-			*/
-			
-			console.log("setting interval");
-			this.time_left = this.round_length;
-			this.interval_ptr = setInterval("game.tick()", this.tick_interval);
-		}
-		else
-		{
-			console.log("ERROR:  trying to start round while one is already running.");
-		}
+		// Fill the divs
+		$("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
+		for(var i=0; i<this.items.length; i++) 
+			$("#answer-"+i).html(this.items[i].title);
+
+		/*
+		// Cook up some CSS for the image
+		var height = $(window).height();
+		var width = ($(window).height()/this.image.height) * this.image.width;
+		var margin_left = Math.ceil( ($(window).width()/2) - (width/2) );	// center the image
+		var css = {'height': height, 'width': width, 'margin-left': margin_left, 'margin-top': '100%'};
+		
+		// Put the image into the <img>
+		$("#the_image").css(css).attr('src', this.image.src);
+		*/
+		
+		console.log("setting time_remaining to "+this.round_length);
+		this.time_remaining = this.round_length;
 	},
 
 	// ------------------------------------------
@@ -282,106 +328,10 @@ var game =
 		return max * ((value = value / d - 1) * value * value + 1) + min;
 	},
         
-	// ------------------------------------------
-	// This function is called every tick_interval millis
-	// and is started in start_round()
-	tick: function()
-	{
-		this.time_left -= this.tick_interval;
-		
-		// TO DO:  I don't know why this has to be 70...
-		// Otherwise, it takes a while to reach the screen in Firefox
-		var pct = this.time_left / this.round_length;
-		
-		// Calculate the size and position of the image (center it)
-		var img_h = this.canvas.height;
-		var ratio = this.canvas.height / this.image.height;
-		var img_w = this.image.width * ratio;
-		var x_pos = (this.canvas.width/2)  - (img_w/2);
-		
-		this.ctx.fillStyle = "rgb(0,0,0)";
-		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-		
-		// Draw the image based on the reveal mode.
-		switch(this.reveal_mode)
-		{
-			case 'move_up':
-				var y_pos = this.canvas.height * pct;
-				this.ctx.drawImage(this.image, x_pos, y_pos, img_w, img_h);
-				break;
-			case 'fade':
-				this.ctx.globalAlpha = this.easeOutCubic(1-pct, 0, 1, 1);
-				this.ctx.drawImage(this.image, x_pos, 0, img_w, img_h);
-				this.ctx.globalAlpha = 1;
-				break;
-			case 'blocks':
-				var i=0;
-				var x_inc = this.image.width / 30;
-				var y_inc = this.image.height / 30;
-				for(var y=0; y<this.image.height; y+=y_inc)
-				{
-					for(var x=0; x<this.image.width; x+=x_inc)
-					{
-						var dx = Math.floor(x*ratio)+x_pos;
-						var dy = Math.floor(y*ratio);
-						var dw = Math.floor(x_inc*ratio);
-						var dh = Math.floor(y_inc*ratio);
-						if(pct < i / 900) this.ctx.drawImage(this.image, x, y, x_inc, y_inc, dx, dy, dw, dh);
-						i++;
-					}
-				}
-				break;
-		}
-
-		
-		// Draw the timer bar
-		this.ctx.fillStyle = "rgb(255,0,0)";
-		this.ctx.fillRect(0, 0, this.canvas.width*pct, 20);
-
-		//$("#the_image").css('margin-top', top+"%");
-		//$("#time_display").html( Math.ceil(this.time_left / 100));
-		
-		if(this.time_left<=0) 
-		{
-			console.log("time is up");
-			this.end_round();
-		}
-	},
-	
 	
 	
 	// ------------------------------------------
-	// Moves the image fully into place and stops the timer
-	// Also starts a new round if needed, or ends the game
-	// called from tick() and the key listener
-	end_round: function()
-	{
-		console.log("end_round()");
-		this.time_left=0;
-		//$("#the_image").css('margin-top', "0%");
-		
-		this.ctx.fillStyle = "rgb(0,0,0)";
-		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-		var h = this.canvas.height;
-		var w = (this.canvas.height / this.image.height) * this.image.width;
-		var x = (this.canvas.width/2)  - (w/2);
-
-		this.ctx.drawImage(this.image, x, 0, w, h);
-		
-		clearInterval(this.interval_ptr);
-		this.interval_ptr=null;
-		
-		if(this.round < this.num_rounds)
-		{
-			console.log("starting new round in 2 seconds");
-			setTimeout('game.start_round()', 5000);
-		}
-		else this.end_game();
-	},
-
-
-
-	// ------------------------------------------
+	// Resets player attributes and HTML stuff on page
 	// Called from start_round() and reset_game()
 	reset_round: function()
 	{
@@ -399,8 +349,26 @@ var game =
 			$('#answer-'+i).css('color', 'white');
 		}
 	},
+
 	
-	
+	// ------------------------------------------
+	// Moves the image fully into place and stops the timer
+	// Also starts a new round if needed, or ends the game
+	// called from tick() and the key listener
+	end_round: function()
+	{
+		console.log("end_round()");
+		this.time_remaining=0;
+
+		if(this.round < this.num_rounds)
+		{
+			console.log("starting new round in 2 seconds");
+			setTimeout('game.start_round()', 5000);
+		}
+		else this.end_game();
+	},
+
+
 	
 	// ------------------------------------------
 	// called from end_round()
@@ -409,7 +377,7 @@ var game =
 		console.log("end_game()");
 		
 		var winner = this.get_winner();
-		this.end_callback( this.get_winner() );
+		this.end_game_callback( this.get_winner() );
 	},
 	
 	
@@ -460,39 +428,63 @@ var game =
 		
 		// if the game is paused, or the player has already guessed in this round, 
 		// or if a round isn't running, ignore
-		if(this.paused||this.players[p].has_guessed||this.interval_ptr==null) 
+		if(this.paused) 
+		{ 
+			console.log("ignoring guess: paused");
 			return;
-		
-		if(this.time_left > this.round_length-500)
+		}
+		if(this.players[p].has_guessed) 
+		{ 
+			console.log("ignoring guess: already guessed");
 			return;
+		}
+		if(this.time_remaining<=0) 
+		{ 
+			console.log("ignoring guess: round is over");
+			return;
+		}
+		if(this.round_length-this.time_remaining > 5) 
+		{ 
+			console.log("ignoring guess: to soon");
+			return;
+		}
 		
-		if(this.time_left<=0 || this.guesses>=this.players.length) 
+		
+		
+		if( this.guesses>=this.players.length ) 
 			alert("ERROR! SANITY IS BROKEN!");
-		
-
 		
 		this.players[p].has_guessed = true;
 		
 		if(this.item_i==i)	// correct guess
 		{
-			this.players[p].score += Math.ceil(this.time_left/10);
+			this.players[p].score += Math.ceil(this.time_remaining);
 			console.log("player "+p+" correct. score is now "+this.players[p].score);
 			$("#player-"+p+"-name").css('color', 'green');
 			$("#player-"+p+"-score").html( this.players[p].score );
 			$('#answer-'+i).css('color', 'green');
-			this.applause.currentTime=0;
-			this.applause.play();
 			this.end_round();
+			
+			if(this.applause.duration>0)
+			{
+				this.applause.currentTime=0;
+				this.applause.play();
+			}
+			return;
 		}
 		else			// incorrect guess
 		{
-			this.players[p].score -= Math.ceil(this.time_left/20);
+			this.players[p].score -= Math.ceil(this.time_remaining/2);
 			console.log("player "+p+" wrong.  score is now "+this.players[p].score);
 			$("#player-"+p+"-name").css('color', 'red');
 			$("#player-"+p+"-score").html( this.players[p].score );
 			$('#answer-'+i).css('color', 'red');
-			this.trombone.currentTime=0;
-			this.trombone.play();
+			
+			if(this.trombone.duration>0)
+			{
+				this.trombone.currentTime=0;
+				this.trombone.play();
+			}
 		}
 		
 		// If the player guessed correctly, or if both players have guessed, end the round.
@@ -501,11 +493,4 @@ var game =
 		if(this.guesses>=this.players.length) this.end_round();
 	},
 	
-	
-	// ------------------------------------------
-	window_resize: function()
-	{
-		$('#targetcanvas').attr('width', $(window).width() );
-		$('#targetcanvas').attr('height', Math.min($(document).height(), $(window).height()) );
-	}
 };
