@@ -51,7 +51,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 			left: 0;
 			z-index: 10;
 		}
-		#targetcanvas {
+		#game_canvas {
 			width: 100%;
 			height: 100%;
 			z-index: -1;
@@ -65,7 +65,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 	<!--<div id="image_holder"><img id="the_image" /></div>-->
 	
 	<div id="container">
-		<canvas id="targetcanvas"></canvas>
+		<!--<canvas id="game_canvas"></canvas>-->
 		<header>
 			<table id="top_bar">
 				<tr>
@@ -152,56 +152,29 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 	<script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
 
 	<script type="text/javascript" src="js/libs/jquery-ui-1.8.15.custom.min.js"></script>
-	<script type="text/javascript" src="js/libs/processing-js-1.2.3/processing-1.2.3.js"></script>
 	<script type="text/javascript" src="js/game.js"></script>
+	<script type="text/javascript" src="js/three/Three.js"></script>
+	<script type="text/javascript" src="js/Detector.js"></script> 
+	<script type="text/javascript" src="js/RequestAnimationFrame.js"></script> 
+	<script type="text/javascript" src="js/Stats.js"></script> 
 	
-    <script type="text/processing" data-processing-target="targetcanvas">
+    <script>
+		if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-		// Round up some vars to initlaize the game!
+		// Initialize the game with players, cities, categories, rounds, and the end game callback
 		var players = ["<?php echo implode('","', $players); ?>"];
 		var cats = ["<?php echo implode('","', $_REQUEST['categories']); ?>"];
 		var cities = ["<?php echo implode('","', $_REQUEST['cities']); ?>"];
 		var num_rounds = <?php print (!isset($_REQUEST['rounds'])||abs($_REQUEST['rounds'])>20)?10:abs(intval($_REQUEST['rounds'])); ?>;
-		var p5 = Processing.getInstanceById('targetcanvas');
+		var statsEnabled = true;
+		var camera, scene, renderer, stats;
 		
-		$(window).resize( function() { resize(); });
+		// Deal with some dom events
+		$(window).resize( function() { init(); });
 		$(window).keypress( function(e){ game.key_pressed(e); } );
+		$(document).ready(function() {
+			game.init(players, cats, cities, num_rounds);
 
-		// --------------------------
-		void setup()
-		{
-			resize();
-				
-			// Initialize the game with players, cities, categories, rounds, and the end game callback
-			game.init(players, cats, cities, num_rounds, p5, show_end_dialog);
-
-			show_begin_dialog();
-		}
-		
-		// --------------------------
-		void draw()
-		{
-			background(0);
-			//try
-			//{			
-				game.update( frameRate );	//stupid bug: http://groups.google.com/group/processingjs/browse_thread/thread/c64860f5af5e6e1b
-				game.draw();
-			//} catch(err) {
-			//	console.log(err);
-			//}
-		}
-		
-		// --------------------------
-		void resize()
-		{
-			var w = $(window).width();
-			var h = Math.max( $(document).height(), $(window).height() );
-			size(w, h);
-		}
-		
-		// --------------------------
-		function show_begin_dialog()
-		{
 			// Show the initial dialog box.  Pressing 'I'm Ready!' starts the game.
 			$("#dialog_begin").dialog({width: '700px', title: 'How to play', closeOnEscape: false, buttons: [
 				{	text: "I'm Ready!",
@@ -214,10 +187,31 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 					click: function() { window.location.href = "index.php"; }
 				}
 			] });
+			
+			init();
+			animate();
+		});
+	
+		
+		// --------------------------
+		// Called every time a round is about to start
+		// img_src is the pre-loaded URL of the image for the round
+		game.round_start_cb = function(img_source) 
+		{
+		
 		}
 		
 		// --------------------------
-		function show_end_dialog(winner)
+		// Called every time a round ends.
+		game.round_end_cb = function() 
+		{
+		
+		}
+		
+		// --------------------------
+		// Called every time a game ends
+		// TO DO: add "tweet this game" button to the dialog
+		game.end_game_cb = function(winner)
 		{
 			var title = (winner==null) ? "Really? No score?" : winner.name+" wins!";
 			$("#dialog_end").dialog({width: '40%', title: title, closeOnEscape: false, buttons: [
@@ -231,6 +225,57 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 					click: function() { window.location.href = "index.php"; }
 				}
 			] });
+		}
+		
+		// --------------------------
+		function init()
+		{ 
+			// Camera params : 
+			// field of view, aspect ratio for render output, near and far clipping plane. 
+			camera = new THREE.Camera(80, w / h, 1, 4000 );
+			scene = new THREE.Scene();
+			renderer = new THREE.WebGLRenderer();
+			resize();
+			
+			document.body.appendChild( renderer.domElement );
+			
+			if ( statsEnabled ) 
+			{
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				stats.domElement.style.zIndex = 100;
+				container.appendChild( stats.domElement );
+			}
+		}
+		
+		// --------------------------
+		function resize()
+		{
+			var w = $(window).width();
+			var h = Math.max( $(document).height(), $(window).height() );
+			renderer.setSize( w, h );
+			camera = new THREE.Camera(80, w / h, 1, 4000 );
+		}
+		
+		// --------------------------
+		function animate() 
+		{
+			requestAnimationFrame( animate );
+			render();
+			if ( statsEnabled ) stats.update();
+		}
+ 
+ 		// --------------------------
+		function render()
+		{
+			game.update();	// should I make this its own thread/interval instead of depending on the WebGL renderer?
+			
+			// How much of the round is left?
+			var pct = game.time_remaining / game.round_length;
+		
+		
+			renderer.render( scene, camera );
 		}
 		
     </script>

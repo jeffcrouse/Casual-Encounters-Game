@@ -20,8 +20,7 @@ var game =
 	items: 			[],				// Craigslist pages loaded from the API
 	item_i:			null,			// The randomly chosen index (0-2)
 	image: 			new Image(),	// An image loaded from the random item (items[item_i].image)
-	pimage:			null,
-	
+
 	// sounds
 	applause: 		null,
 	trombone: 		null,
@@ -34,23 +33,19 @@ var game =
 	round: 			0,				// The current round
 	paused: 		false,			// Whether the game is currently paused
 	
-	end_game_callback: 	null,
-
-	reveal_modes:	['move_up', 'fade'],	// Implemented in draw()
-	reveal_mode:	null,
+	// callback functions
+	round_start_cb: null,
+	round_end_cb: null,
+	end_game_cb: null,
 	
-	p5: null,						// The processing instance that we will use to draw 'n stuff
-
 	// ------------------------------------------
-	init: function(_players, _categories, _cities, _num_rounds, _p5, _end_game_callback)
+	init: function(_players, _categories, _cities, _num_rounds)
 	{	
 		for(i in _players)
 			this.players.push({name: _players[i], score: 0, has_guessed: false});
 		this.categories = _categories;
 		this.cities = _cities;
-		this.p5 = _p5;
-		this.num_rounds = _num_rounds;
-		this.end_game_callback = _end_game_callback;
+		this.num_rounds = _num_rounds;;
 		
 		this.applause = this.make_sound("applause");
 		this.trombone = this.make_sound("sad_trombone");
@@ -105,66 +100,7 @@ var game =
 			this.end_round();
 		}
 	},
-	
-	// ------------------------------------------
-	draw: function()
-	{
-		var pct = this.time_remaining / this.round_length;
-	
-		if(this.image.width>0)
-		{
-			// Calculate the size and position of the image (center it)
-			var img_h = this.p5.height;
-			var ratio = this.p5.height / this.image.height;
-			var img_w = this.image.width * ratio;
-			var x_pos = (this.p5.width/2)  - (img_w/2);
-			
-	
-			// Draw the image based on the reveal mode.
-			switch(this.reveal_mode)
-			{
-				case 'move_up':
-					var y_pos = this.p5.height * pct;
-					this.p5.image(this.pimage, x_pos, y_pos, img_w, img_h);
-					break;
-	
-				case 'fade':
-					
-					this.p5.tint(50.0, 50.0, 50.0);
-					this.p5.image(this.pimage, x_pos, 0, img_w, img_h);
-					this.p5.noTint();
-					break;
-				/*
-				case 'blocks':
-					var i=0;
-					var x_inc = this.image.width / 30;
-					var y_inc = this.image.height / 30;
-					for(var y=0; y<this.image.height; y+=y_inc)
-					{
-						for(var x=0; x<this.image.width; x+=x_inc)
-						{
-							if(pct < i / 900) 
-							{
-								var dx = Math.floor(x*ratio)+x_pos;
-								var dy = Math.floor(y*ratio);
-								var dw = Math.floor(x_inc*ratio);
-								var dh = Math.floor(y_inc*ratio);
-								this.ctx.drawImage(this.image, x, y, x_inc, y_inc, dx, dy, dw, dh);
-							}
-							i++;
-						}
-					}
-					break;
-				*/
-			}
-		}
-		
-		this.p5.fill(255, 0, 0);
-		this.p5.rect(0, 0, this.p5.width * pct, 20);
 
-		//$("#the_image").css('margin-top', top+"%");
-		//$("#time_display").html( Math.ceil(this.time_remaining / 100));
-	},
 	
 	// ------------------------------------------
 	key_pressed: function( e ) 
@@ -225,10 +161,6 @@ var game =
 		// Pick a new category
 		var i = Math.floor( Math.random() * this.categories.length );
 		this.category = this.categories[i];		
-		
-		i = Math.floor( Math.random() * this.reveal_modes.length );
-		this.reveal_mode = this.reveal_modes[i];
-		console.log("reveal mode: "+this.reveal_mode);
 		
 		$("#round_info").html("Loading "+this.category+' <img src="gs/ajax-loader.gif" />');
 		
@@ -294,8 +226,6 @@ var game =
 	{
 		console.log("success loading "+this.image.src);
 
-		this.pimage = this.p5.loadImage( this.image.src );
-
 		// get rid of any 'load' function that has been bound
 		// to the $(image) in previous rounds
 		$(this.image).unbind('load');
@@ -318,16 +248,12 @@ var game =
 		$("#the_image").css(css).attr('src', this.image.src);
 		*/
 		
+		if(this.round_start_cb!=null)
+			this.round_start_cb( this.image.src );
+		
 		console.log("setting time_remaining to "+this.round_length);
 		this.time_remaining = this.round_length;
 	},
-
-	// ------------------------------------------
-    easeOutCubic: function(value, min, max, d)
-	{
-		return max * ((value = value / d - 1) * value * value + 1) + min;
-	},
-        
 	
 	
 	// ------------------------------------------
@@ -377,7 +303,7 @@ var game =
 		console.log("end_game()");
 		
 		var winner = this.get_winner();
-		this.end_game_callback( this.get_winner() );
+		this.end_game_cb( this.get_winner() );
 	},
 	
 	
