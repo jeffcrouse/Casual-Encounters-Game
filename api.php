@@ -30,7 +30,7 @@ function get_url_contents($url)
 	curl_setopt ($crl, CURLOPT_CONNECTTIMEOUT, $timeout);
 	$ret = curl_exec($crl);
 	if($ret === false) {
-		throw new Exception('Curl error: ' . curl_error($ch));
+		throw new Exception('Curl error: ' . curl_error($crl));
 	}
 	curl_close($crl);
 	return $ret;

@@ -26,7 +26,8 @@ var game =
 	trombone: 		null,
 	
 	time_remaining: 0,				// The time remaining in the current round
-	round_length: 	20,				// The duration of a single round in seconds
+	round_length: 	20000,			// The duration of a single round in millis
+	tick_interval:	10,
 	xhr_ptr: 		null,			// ajax pointer
 	guesses: 		0,				// The number of guesses that have been made in the current round
 	num_rounds: 	0,				// Total number of founds
@@ -88,13 +89,20 @@ var game =
 	},
 	
 	// ------------------------------------------
-	update: function(frameRate)
+	update: function()
 	{
 		if(this.paused || this.time_remaining<=0) return;
 
-		this.time_remaining -= (frameRate / 3600);
+		this.time_remaining -= this.tick_interval;
 		
-		if(this.time_remaining<=0) 
+		var pct = (this.time_remaining / this.round_length)*100;
+		$("#time_bar").css('width', pct+"%");
+	
+		if(this.time_remaining>0)
+		{
+			setTimeout("game.update()", this.tick_interval);
+		}
+		else
 		{
 			console.log("time is up");
 			this.end_round();
@@ -142,9 +150,14 @@ var game =
 	toggle_paused: function()
 	{
 		console.log("toggle_paused()");
+		
 		this.paused = !this.paused;
 		if(this.paused) $("#round_info").html( "paused" );		
-		else $("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
+		else 
+		{	
+			$("#round_info").html("round "+this.round+" / "+this.num_rounds+": "+this.category+" - "+this.city);
+			this.update();
+		}
 	},
 	
 	
@@ -249,10 +262,11 @@ var game =
 		*/
 		
 		if(this.round_start_cb!=null)
-			this.round_start_cb( this.image.src );
+			this.round_start_cb( this.image );
 		
 		console.log("setting time_remaining to "+this.round_length);
 		this.time_remaining = this.round_length;
+		this.update();
 	},
 	
 	
@@ -369,12 +383,13 @@ var game =
 			console.log("ignoring guess: round is over");
 			return;
 		}
-		if(this.round_length-this.time_remaining > 5) 
+		/*
+		if(this.round_length - this.time_remaining > this.round_length/10) 
 		{ 
 			console.log("ignoring guess: to soon");
 			return;
 		}
-		
+		*/
 		
 		
 		if( this.guesses>=this.players.length ) 

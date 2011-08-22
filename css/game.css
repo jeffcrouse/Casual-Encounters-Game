@@ -14,23 +14,43 @@ header {
 	width: 100%;
 	top: 0;
 	left: 0;
-	z-index: 9;
+	z-index: 2;
 }
-footer {
-	font-size: 36px;
+
+
+table {
+	width: 100%		
 }
-#player-0, #player-1 {
-	width: 30%;
+td {
+	text-align: center;
 }
+		
+
+#corner {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 3;
+}
+#time_bar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: red;
+	height: 40px;
+	width: 0;
+	z-index:1;
+}
+
 #answers {
+	font-size: 36px;
+	z-index: 2;
 	position: absolute;
 	height: 20%;
 	top: 80%;
-}
-#answers table {
 	height: 100%;
-	overflow: hidden;
 }
+
 #answers td {
 	border: 8px solid white;
 	width: 33%;
@@ -40,10 +60,12 @@ footer {
 .answer:hover {
 	background-color: rgba(255,255,255,0.5);
 }
+/*
 #info_box {
 	width: 50%;
 	overflow: hidden;
 }
+*/
 .dialog_boxes {
 	text-shadow: none;
 	display: none;
@@ -51,15 +73,12 @@ footer {
 #round_info {
 	clear: both;
 }
-#the_image {
-	margin: 0;
-	padding: 0;
-}
-#image_holder {
-	width: 100%;
-	height: 100%;
-	position: absolute;
-}
 .warning {
 	color: red;
 }
+
+	
+	
+
+
+	
