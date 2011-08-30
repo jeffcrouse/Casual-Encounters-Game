@@ -7,70 +7,60 @@
 	
 ------------------------------------------------------------- */
 
-var game =
+// namespace
+var CASUAL = CASUAL || {};
+
+// The root game object.  Shouldn't really be created directly, rather through one of the 
+// 3 subclasses (WebGLGame, CanvasGame, or HTMLGame)
+CASUAL.Game = function(_players, _categories, _cities, _num_rounds)
 {	
-	players: 		[],				// An array of player objects
+	this.players= 			[];				// An array of player objects
+	for(i in _players)
+		this.players.push({name: _players[i], score: 0, has_guessed: false});
+		
+	this.categories= 		_categories||[];// An array of strings (m4m, w4m, etc)
+	this.category=			null;			// The randomly chosen category
 	
-	categories: 	[],				// An array of strings (m4m, w4m, etc)
-	category:		null,			// The randomly chosen category
+	this.cities=			_cities||[];	// An array of all cities
+	this.city=				null;			// The city that the current round is from
 	
-	cities:			[],				// An array of all cities
-	city: 			null,			// The city that the current round is from
-	
-	items: 			[],				// Craigslist pages loaded from the API
-	item_i:			null,			// The randomly chosen index (0-2)
-	image: 			new Image(),	// An image loaded from the random item (items[item_i].image)
+	this.items=				[];				// Craigslist pages loaded from the API
+	this.item_i=			null;			// The randomly chosen index (0-2)
+	this.image=				new Image();	// An image loaded from the random item (items[item_i].image)
 
 	// sounds
-	applause: 		null,
-	trombone: 		null,
+	this.applause= 			this.make_sound("applause");
+	this.trombone= 			this.make_sound("sad_trombone");
 	
-	time_remaining: 0,				// The time remaining in the current round
-	round_length: 	20000,			// The duration of a single round in millis
-	tick_interval:	10,
-	xhr_ptr: 		null,			// ajax pointer
-	guesses: 		0,				// The number of guesses that have been made in the current round
-	num_rounds: 	0,				// Total number of founds
-	round: 			0,				// The current round
-	paused: 		false,			// Whether the game is currently paused
+	this.time_remaining= 	0;				// The time remaining in the current round
+	this.round_length= 		20000;			// The duration of a single round in millis
+	this.tick_interval=		10;
+	this.xhr_ptr=			null;			// ajax pointer
+	this.guesses= 			0;				// The number of guesses that have been made in the current round
+	this.num_rounds= 		_num_rounds||0;	// Total number of founds
+	this.round= 			0;				// The current round
+	this.paused= 			false;			// Whether the game is currently paused
 	
 	// callback functions
-	round_start_cb: null,
-	round_end_cb: null,
-	end_game_cb: null,
+	this.round_start_cb= 	null;
+	this.round_end_cb= 		null;
+	this.end_game_cb= 		null;
 	
-	// ------------------------------------------
-	init: function(_players, _categories, _cities, _num_rounds)
-	{	
-		for(i in _players)
-			this.players.push({name: _players[i], score: 0, has_guessed: false});
-		this.categories = _categories;
-		this.cities = _cities;
-		this.num_rounds = _num_rounds;;
-		
-		this.applause = this.make_sound("applause");
-		this.trombone = this.make_sound("sad_trombone");
 
-		// if there is only one player, activate 'click' mode
-		if(this.players.length==1)
-		{
-			$("#answer-0").click(function(){ game.guess(0, 0); });
-			$("#answer-1").click(function(){ game.guess(0, 1); });
-			$("#answer-2").click(function(){ game.guess(0, 2); });
-		}
-		
-		// The game assumes that there some divs on the page
-		var required_divs = new Array("#round_info", "#answer-1", "#answer-2", "#answer-3");
-		for(i in this.players)
-		{
-			required_divs.push( "#player-"+i+"-name" );
-			required_divs.push( "#player-"+i+"-score" );
-		}
-		
-		// TO DO: Test if the required divs exist here			
-	},
-	
-	
+	// if there is only one player, activate 'click' mode
+	if(this.players.length==1)
+	{
+		$("#answer-0").click(function(){ game.guess(0, 0); });
+		$("#answer-1").click(function(){ game.guess(0, 1); });
+		$("#answer-2").click(function(){ game.guess(0, 2); });
+	}
+}
+
+
+
+// Game Functions
+CASUAL.Game.prototype = 
+{	
 	// ------------------------------------------
 	make_sound: function(name)
 	{
@@ -213,11 +203,12 @@ var game =
 			this.item_i = Math.floor(Math.random()*3);
 			console.log("correct answer is: "+this.item_i);
 			
-			this.image = new Image();
-			this.image.src = this.items[this.item_i].image;
 
-			// Load the random image into the JS object 'image'
-			console.log("Loading image "+this.image.src);
+			this.image = new Image();
+			// We have to make it a "local image" by using this php proxy
+			this.image.src = "imgproxy.php?url="+this.items[this.item_i].image;
+			console.log("loading image "+this.image.src);
+			
 			
 			$(this.image).load(function(){
 			
@@ -230,6 +221,7 @@ var game =
 			});	
 		}
 	},
+
 
 
 	// ------------------------------------------
@@ -250,20 +242,7 @@ var game =
 		for(var i=0; i<this.items.length; i++) 
 			$("#answer-"+i).html(this.items[i].title);
 
-		/*
-		// Cook up some CSS for the image
-		var height = $(window).height();
-		var width = ($(window).height()/this.image.height) * this.image.width;
-		var margin_left = Math.ceil( ($(window).width()/2) - (width/2) );	// center the image
-		var css = {'height': height, 'width': width, 'margin-left': margin_left, 'margin-top': '100%'};
-		
-		// Put the image into the <img>
-		$("#the_image").css(css).attr('src', this.image.src);
-		*/
-		
-		if(this.round_start_cb!=null)
-			this.round_start_cb( this.image );
-		
+
 		console.log("setting time_remaining to "+this.round_length);
 		this.time_remaining = this.round_length;
 		this.update();
@@ -391,7 +370,6 @@ var game =
 		}
 		*/
 		
-		
 		if( this.guesses>=this.players.length ) 
 			alert("ERROR! SANITY IS BROKEN!");
 		
@@ -435,3 +413,8 @@ var game =
 	},
 	
 };
+
+
+
+
+

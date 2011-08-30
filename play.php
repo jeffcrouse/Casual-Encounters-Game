@@ -135,25 +135,36 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
 	<script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
-
 	<script type="text/javascript" src="js/libs/jquery-ui-1.8.15.custom.min.js"></script>
-	<script type="text/javascript" src="js/game.js"></script>
-	<script type="text/javascript" src="js/three.js/build/Three.js"></script>
-	<script type="text/javascript" src="js/three.js/examples/js/Detector.js"></script> 
-	<script type="text/javascript" src="js/three.js/examples/js/RequestAnimationFrame.js"></script> 
-	<script type="text/javascript" src="js/three.js/examples/js/Stats.js"></script> 
+	
+	<script type="text/javascript" src="js/Game.js"></script>
+	<script type="text/javascript" src="js/Detector.js"></script> 
+	
+	<!-- TO DO: Can these be added dynamically depending on which kind of game is chosen? -->
+	<script type="text/javascript" src="js/WebGLGame.js"></script>
+	<script type="text/javascript" src="js/CanvasGame.js"></script>
+	<script type="text/javascript" src="js/HTMLGame.js"></script>
+	
 	
     <script>
-		if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
 		// vaaaars!
 		var players = ["<?php echo implode('","', $players); ?>"];
 		var cats = ["<?php echo implode('","', $_REQUEST['categories']); ?>"];
 		var cities = ["<?php echo implode('","', $_REQUEST['cities']); ?>"];
 		var num_rounds = <?php print (!isset($_REQUEST['rounds'])||abs($_REQUEST['rounds'])>20)?10:abs(intval($_REQUEST['rounds'])); ?>;
-		var statsEnabled = true;
-		var camera, scene, renderer, stats, mesh, max_height;
-
+		
+		// Our game object
+		var game;
+		
+		// Figure out which renderer to use
+		if ( Detector.webgl ) 
+			game = new CASUAL.WebGLGame(players, cats, cities, num_rounds);
+		else if( Detector.canvas )
+			game = new CASUAL.CanvasGame(players, cats, cities, num_rounds);
+		else
+			game = new CASUAL.HTMLGame(players, cats, cities, num_rounds);
+		
+		
 		// Deal with some dom events
 		$(window).resize( function() {  });
 		$(window).keypress( function(e){ game.key_pressed(e); } );
@@ -163,12 +174,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 			$("#dialog_begin").dialog({width: '700px', title: 'How to play', closeOnEscape: false, buttons: [
 				{	text: "I'm Ready!",
 					click: function() {
-						
-						init();
-						animate();
-						game.init(players, cats, cities, num_rounds);
 						game.start_round();
-						
 						$(this).dialog('close');
 					}
 				},
@@ -177,96 +183,6 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 				}
 			] });
 		});
-	
-		
-		// --------------------------
-		function init()
-		{ 
-			
-			var w = window.innerWidth;
-			var h = window.innerHeight;
-			max_height = 1 - (w-h) * (1/w);
-			
-			console.log("initializing: w="+w+" h="+h+" max_height="+max_height);
-			
-			// Camera params : 
-			// field of view, aspect ratio for render output, near and far clipping plane. 
-			camera = new THREE.Camera(35, w / h, .1, 10000 );
-  			camera.position.set(0, 0, 1);
-
-			scene = new THREE.Scene();
-			renderer = new THREE.WebGLRenderer();
-			renderer.setSize( w, h );
-			renderer.setClearColor( new THREE.Color(0x000000) );
-			
-			$("#container").append( renderer.domElement );
-			//document.body.appendChild( renderer.domElement );
-			
-			if ( statsEnabled ) 
-			{
-				stats = new Stats();
-				stats.domElement.style.position = 'absolute';
-				stats.domElement.style.top = '0px';
-				stats.domElement.style.zIndex = 100;
-				container.appendChild( stats.domElement );
-			}
-		}
-		
-		// --------------------------
-		function animate() 
-		{
-			requestAnimationFrame( animate );
-			render();
-			if ( statsEnabled ) stats.update();
-		}
- 
- 		// --------------------------
-		function render()
-		{
-			// How much of the round is left?
-			var pct = game.time_remaining / game.round_length;
-
-			if(mesh)
-				mesh.position.y = (-max_height) * pct;
-	
-			renderer.render( scene, camera );
-		}
-			
-		// --------------------------
-		// Called every time a round is about to start
-		// img_src is the pre-loaded URL of the image for the round
-		game.round_start_cb = function(img_obj) 
-		{	
-			console.log("round_start_cb()");
-			
-			if(mesh)
-				scene.removeObject( mesh );
-
-			var height = max_height;
-			var ratio = height / img_obj.height;
-			var width = img_obj.width * ratio;
-		
-			// WebGL won't load cross-origin images so we have to use this little proxy.
-			// TO DO:  don't bother preloading the image in game.ajax_success - we have to load it again here
-			var url = "imgproxy.php?url="+img_obj.src;
-			var texture = THREE.ImageUtils.loadTexture(url);
-			var material = new THREE.MeshBasicMaterial( { map: texture } );
-    		var geometry = new THREE.PlaneGeometry(width, height, 10, 10);
-
-			mesh = new THREE.Mesh( geometry, material );
-			mesh.translateX( 0 );
-			mesh.translateY( -max_height );
-			mesh.translateZ( 0 );
-
-			scene.addObject( mesh );
-		}
-		
-		// --------------------------
-		// Called every time a round ends.
-		game.round_end_cb = function() 
-		{
-		
-		}
 		
 		// --------------------------
 		// Called every time a game ends
