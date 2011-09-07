@@ -1,5 +1,6 @@
 <?php
-ini_set('display_errors', 1);
+require_once 'common.php';
+
 // Turn errors into exceptions
 function exceptions_error_handler($severity, $message, $filename, $lineno) {
   if (error_reporting() == 0) 
@@ -15,26 +16,6 @@ session_start();
 if(isset($_REQUEST['reset'])) 			session_unset();
 if(!isset($_SESSION['used_urls'])) 		$_SESSION['used_urls']=array();
 if(!isset($_SESSION['used_titles'])) 	$_SESSION['used_titles']=array();
-
-
-// ------------------------------------
-function get_url_contents($url)
-{
-	$crl = curl_init();
-	$timeout = 5;
-	curl_setopt ($crl, CURLOPT_URL,$url);
-	curl_setopt ($crl, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt ($crl, CURLOPT_AUTOREFERER, 1);
-	curl_setopt ($crl, CURLOPT_FOLLOWLOCATION, TRUE);
-	curl_setopt ($crl, CURLOPT_USERAGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:5.0.1) Gecko/20100101 Firefox/5.0.1");
-	curl_setopt ($crl, CURLOPT_CONNECTTIMEOUT, $timeout);
-	$ret = curl_exec($crl);
-	if($ret === false) {
-		throw new Exception('Curl error: ' . curl_error($crl));
-	}
-	curl_close($crl);
-	return $ret;
-}
 
 
 
@@ -189,23 +170,18 @@ class API
 	// ---------------------------
 	function get_items()
 	{	
-		global $_REQUEST, $_SESSION;
+		global $_REQUEST, $_SESSION, $_CITIES;
 	
 		// Reset the city array
 		$this->items = array();
 	
-		// Choose a random city
-		$valid_cities = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
-			"portland", "phoenix", "detroit", "denver", "dallas", 
-			"atlanta", "minneapolis", "miami", "washingtondc", "saltlakecity",
-			"vancouver.en", "tokyo", "dublin");
-			
+		// Choose a random city			
 		if(!isset($_REQUEST['cities']) || count($_REQUEST['cities'])<1)
-			$_REQUEST['cities']=$valid_cities;
+			$_REQUEST['cities']=$_CITIES;
 		
 		shuffle($_REQUEST['cities']);
 		$this->city = array_pop($_REQUEST['cities']);
-		if(!in_array($this->city, $valid_cities))
+		if(!in_array($this->city, $_CITIES))
 			throw new Exception("{$this->city} is not a valid city");
 	
 		// Parse the search page on Craigslist

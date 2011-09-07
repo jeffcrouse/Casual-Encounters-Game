@@ -1,9 +1,9 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 require_once 'common.php';
 
-// Make an array of non-empty player names
+// SANITIZE INPUT
+
+// Make the players array
 $players = array();
 foreach($_REQUEST['players'] as $player)
 	if(!empty($player)) $players[] = substr($player, 0, 10);
@@ -14,10 +14,19 @@ $num_rounds = (!isset($_REQUEST['rounds']) || abs(intval($_REQUEST['rounds'])) >
 	? 10
 	: abs(intval($_REQUEST['rounds']));
 
+// Determine which categories to use
+$categories = array();
+foreach($_REQUEST['categories'] as $cat)
+	if(in_array($cat, $_CATEGORIES)) $categories[] = $cat;
+
+// Determine which cities to use
+$cities = array();
+foreach($_REQUEST['cities'] as $city)
+	if(in_array($city, $_CITIES)) $cities[] = $city;
 
 // Check for problems
-if(count($_REQUEST['categories'])==0)		header("Location: index.php?error=nocats");
-if(count($_REQUEST['cities'])<2)			header("Location: index.php?error=nocities");
+if(count($categories)==0)					header("Location: index.php?error=nocats");
+if(count($cities)<2)						header("Location: index.php?error=nocities");
 if($num_players<1||$num_players>3) 			header("Location: index.php?error=playercount");
 
 ?>
@@ -109,8 +118,8 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		// vaaaars!
 		var back_button = {text: "No, take me back", click: function() { window.location.href = "index.php"; }};
 		var players = ["<?php echo implode('","', $players); ?>"];
-		var cats = ["<?php echo implode('","', $_REQUEST['categories']); ?>"];
-		var cities = ["<?php echo implode('","', $_REQUEST['cities']); ?>"];
+		var cats = ["<?php echo implode('","', $categories); ?>"];
+		var cities = ["<?php echo implode('","', $cities); ?>"];
 		var num_rounds = <?php print $num_rounds;  ?>;
 		
 		// Our game object
@@ -120,7 +129,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		// TO DO:  replace wth http://headjs.com ???
 		// Figure out what subclass of CASUAL.Game object to use using the Detector
 		// Then load the JS files that are needed and construct a game object
-		if ( Detector.webgl ) 
+		if ( false) //Detector.webgl ) 
 		{
 			$.getScript('js/three.js/build/Three.js', function(){
 			$.getScript('js/WebGLGame.js', function(){
@@ -133,12 +142,12 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		}
 		else if( Detector.canvas )
 		{
-			$.getScript('js/processing-js/processing-1.3.0.min.js', function(){
+			$.getScript('js/processing-1.3.0.min.js', function(){
 			$.getScript('js/CanvasGame.js', function(){
 				game = new CanvasGame(players, cats, cities, num_rounds);
 				game.end_game_cb = end_game;
 				console.log( game );
-			}).error(function(){alert("error loading CanvasGamejs");});
+			}).error(function(){alert("error loading CanvasGame.js");});
 			}).error(function(){alert("error loading processing-js");});			
 		}
 		else

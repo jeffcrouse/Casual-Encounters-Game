@@ -11,12 +11,13 @@
 // 3 subclasses (WebGLGame, CanvasGame, or HTMLGame)
 Game = function(_players, _categories, _cities, _num_rounds)
 {	
-	console.log("Game constructor called");
+	_players = _players||[];
+	console.log("Game constructor called with "+_players.length+" players");
 
 	this.players= 			[];				// An array of player objects
 	for(i in _players)
 		this.players.push({name: _players[i], score: 0, has_guessed: false});
-	console.log("initializing game with "+players.length+" players");
+	
 	
 	this.categories= 		_categories||[];// An array of strings (m4m, w4m, etc)
 	this.category=			null;			// The randomly chosen category

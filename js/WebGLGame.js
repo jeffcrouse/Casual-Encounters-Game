@@ -24,6 +24,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	this.mesh=				null;
 	this.max_height=		1 - (w-h) * (1/w);
 	
+	
 	console.log("initializing: w="+w+" h="+h+" max_height="+this.max_height);
 	
 	// Camera params : 
@@ -31,7 +32,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	this.camera.position.set(0, 0, 1);
 
 	this.renderer.setSize( w, h );
-	this.renderer.setClearColor( new THREE.Color(0x0000FF) );
+	this.renderer.setClearColor( new THREE.Color(0x000000) );
 	
 	$("body").append( this.renderer.domElement );
 	
@@ -62,13 +63,13 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 		var ratio = height / this.image.height;
 		var width = this.image.width * ratio;
 	
-		var texture = new THREE.Texture(this.image.src);
-		var material = new THREE.MeshBasicMaterial( { map: texture } );
+		//var texture = new THREE.Texture(this.image);
+		var material = new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( this.image.src )  } );
 		var geometry = new THREE.PlaneGeometry(width, height, 10, 10);
 
 		this.mesh = new THREE.Mesh( geometry, material );
 		console.log( this.mesh );
-		//this.mesh.translateY( -this.max_height );
+		this.mesh.translateY( -this.max_height );
 		this.scene.addObject( this.mesh );
 	};
 	
@@ -77,7 +78,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	// Callback that happens at the end of a round
 	this.end_round_cb = function()
 	{
-	
+		console.log("WebGLGame.end_round_cb called");
 	};
 	
 	
@@ -97,7 +98,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 
 		if(game.mesh)
 		{
-			//game.mesh.position.y = (-game.max_height) * pct;
+			game.mesh.position.y = (-game.max_height) * pct;
 		}
 		
 		game.renderer.render( game.scene, game.camera );

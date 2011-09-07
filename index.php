@@ -1,3 +1,4 @@
+<?php require_once 'common.php'; ?>
 <!doctype html>
 <!--[if lt IE 7 ]> <html lang="en" class="no-js ie6"> <![endif]-->
 <!--[if IE 7 ]>    <html lang="en" class="no-js ie7"> <![endif]-->
@@ -135,13 +136,7 @@
 						<span class="small">which cities should be included in your game?</span>
 						</label>
 						<div class="buttongroup">
-						<?php
-						$cities = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
-							"portland", "phoenix", "detroit", "denver", "dallas", 
-							"atlanta", "minneapolis", "miami", "washingtondc", "saltlakecity",
-							"vancouver.en", "tokyo", "dublin");
-						foreach($cities as $city):
-						?>
+						<?php foreach($_CITIES as $city): ?>
 						<input name="cities[]" value="<?php echo $city; ?>" type="checkbox" checked  /> <a target="_blank" href="http://<?php echo $city; ?>.craigslist.org/search/cas?hasPic=1"><?php echo ucfirst($city); ?></a><br />
 						<?php endforeach; ?>
 						</div>
@@ -150,31 +145,17 @@
 						<span class="small">which categories do you want included in your game?</span>
 						</label>
 						<div class="buttongroup">
-							<input name="categories[]" value="M4W" type="checkbox" checked  /> M4W (Man seeks Woman)<br />
-							<input name="categories[]" value="W4M" type="checkbox" checked  /> W4M (Woman seeks Man)<br />
-							<input name="categories[]" value="M4M" type="checkbox" checked  /> M4M (Man seeks Man)<br />
-							<input name="categories[]" value="W4W" type="checkbox" checked  /> W4W (Woman seeks Woman)<br />
-							<input name="categories[]" value="T4M" type="checkbox" checked  /> T4M (Transexual seeks Male)<br />
-							<input name="categories[]" value="M4T" type="checkbox" checked  /> M4T (Male seeks Transexual)<br />
-							<a href="#" id="more_options_link">more options</a>
-							
-							<div id="more_options">
-								<input name="categories[]" value="mw4mw" type="checkbox" /> MW4MW (Man&Woman seeks Man&Woman)<br />
-								<input name="categories[]" value="mw4w" type="checkbox" /> MW4W (Man&Woman seeks Woman)<br />
-								<input name="categories[]" value="mw4m" type="checkbox" /> MW4M (Man&Woman seeks Man)<br />
-								<input name="categories[]" value="w4mw" type="checkbox" /> W4MW (Woman seeks Man&Woman)<br />
-								<input name="categories[]" value="m4mw" type="checkbox" /> M4MW<br />
-								<input name="categories[]" value="w4ww" type="checkbox" /> W4WW<br />
-								<input name="categories[]" value="m4mm" type="checkbox" /> M4MM<br />
-								<input name="categories[]" value="mm4m" type="checkbox" /> MM4M<br />
-								<input name="categories[]" value="ww4w" type="checkbox" /> WW4W<br />
-								<input name="categories[]" value="ww4m" type="checkbox" /> WW4M<br />
-								<input name="categories[]" value="mm4w" type="checkbox" /> MM4W<br />
-								<input name="categories[]" value="m4ww" type="checkbox" /> M4WW<br />
-								<input name="categories[]" value="w4mm" type="checkbox" /> W4MM<br />
-								<input name="categories[]" value="t4mw" type="checkbox" /> T4MW<br />
-								<input name="categories[]" value="mw4t" type="checkbox" /> MW4T<br />
-							</div>
+							<?php
+							$search = array("4", "m", "w", "t", "ManWoman", "ManMan", "WomanWoman");
+							$replace = array(" seeks ", "Man", "Woman", "Transexual", "Man & Woman", "Man & Man", "Woman & Woman");
+							for($i=0; $i<count($_CATEGORIES); $i++)
+							{
+								$cat = $_CATEGORIES[$i];
+								$label = str_replace($search, $replace, $cat);	
+								$checked = ($i<5) ? "checked " : "";
+								printf('<input name="categories[]" value="%s" type="checkbox" %s/> %s (%s)<br />', $cat, $checked, $label, $cat);
+							}
+							?>
 						</div>
 				
 						<label>Rounds
@@ -219,19 +200,12 @@
 		</footer>
 	</div>
 
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-	<script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
-
-	<script type="text/javascript" src="js/libs/jquery-ui-1.8.15.custom.min.js"></script>
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
 
 	<script>
 	$(function() {
 		$('#main_nav').tabs();
-		$('#more_options').hide();
-		$('#more_options_link').click(function(){
-			$('#more_options').show();
-			$(this).hide();
-		});
 	});
 	</script>
 	

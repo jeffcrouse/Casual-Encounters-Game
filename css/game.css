@@ -7,6 +7,13 @@ body, html {
 	background-color: #000000;
 	text-shadow: 2px 2px 2px black;
 }
+table {
+	width: 100%		
+}
+td {
+	text-align: center;
+}
+
 #top_bar {
 	padding-top: 20px;
 	font-size: 42px;
@@ -16,23 +23,13 @@ body, html {
 	left: 0;
 	z-index: 2;
 }
-
-
-table {
-	width: 100%		
-}
-td {
-	text-align: center;
-}
-		
-
-#corner {
+#corner {			/* The logo in the upper right corner */
 	position: absolute;
 	top: 0;
 	left: 0;
 	z-index: 3;
 }
-#time_bar {
+#time_bar {			/* The red time bar */
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -41,8 +38,7 @@ td {
 	width: 0;
 	z-index:1;
 }
-
-#answers {
+#answers {			/* The bottom table that contains the answers */
 	font-size: 36px;
 	z-index: 2;
 	position: absolute;
@@ -50,8 +46,7 @@ td {
 	top: 80%;
 	height: 100%;
 }
-
-#answers td {
+#answers td {		/* Each cell of the answers table */
 	border: 8px solid white;
 	width: 33%;
 	overflow: hidden;
@@ -60,18 +55,9 @@ td {
 .answer:hover {
 	background-color: rgba(255,255,255,0.5);
 }
-/*
-#info_box {
-	width: 50%;
-	overflow: hidden;
-}
-*/
 .dialog_boxes {
 	text-shadow: none;
 	display: none;
-}
-#round_info {
-	clear: both;
 }
 .warning {
 	color: red;
