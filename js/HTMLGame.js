@@ -8,9 +8,9 @@
 ------------------------------------------------------------- */
 
 
-CASUAL.HTMLGame = function()
+HTMLGame = function()
 {
-	CASUAL.Game.call(this);
+	Game.call(this);
 	
 	var w = window.innerWidth;
 	var h = window.innerHeight;
@@ -19,14 +19,7 @@ CASUAL.HTMLGame = function()
 
 }
 
-CASUAL.HTMLGame.prototype = new CASUAL.Game();
-
-
-CASUAL.HTMLGame.prototype = {
-
-	
-}
-
+HTMLGame.prototype = new CASUAL.Game();
 
 
 

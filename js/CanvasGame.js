@@ -8,9 +8,9 @@
 ------------------------------------------------------------- */
 
 
-CASUAL.CanvasGame = function()
+CanvasGame = function()
 {
-	CASUAL.Game.call(this);
+	Game.call(this);
 	
 	document.write(unescape('%3Cscript src="js/processing-js/processing-1.3.0-api.min.js"%3E%3C/script%3E'));
 	
@@ -19,14 +19,4 @@ CASUAL.CanvasGame = function()
 
 }
 
-CASUAL.CanvasGame.prototype = new CASUAL.Game();
-
-
-CASUAL.CanvasGame.prototype = {
-
-	
-}
-
-
-
-
+CanvasGame.prototype = new CASUAL.Game();

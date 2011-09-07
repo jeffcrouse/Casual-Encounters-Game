@@ -7,17 +7,17 @@
 	
 ------------------------------------------------------------- */
 
-// namespace
-var CASUAL = CASUAL || {};
-
 // The root game object.  Shouldn't really be created directly, rather through one of the 
 // 3 subclasses (WebGLGame, CanvasGame, or HTMLGame)
-CASUAL.Game = function(_players, _categories, _cities, _num_rounds)
+Game = function(_players, _categories, _cities, _num_rounds)
 {	
+	console.log("Game constructor called");
+
 	this.players= 			[];				// An array of player objects
 	for(i in _players)
 		this.players.push({name: _players[i], score: 0, has_guessed: false});
-		
+	console.log("initializing game with "+players.length+" players");
+	
 	this.categories= 		_categories||[];// An array of strings (m4m, w4m, etc)
 	this.category=			null;			// The randomly chosen category
 	
@@ -29,8 +29,8 @@ CASUAL.Game = function(_players, _categories, _cities, _num_rounds)
 	this.image=				new Image();	// An image loaded from the random item (items[item_i].image)
 
 	// sounds
-	this.applause= 			this.make_sound("applause");
-	this.trombone= 			this.make_sound("sad_trombone");
+	this.applause= 			make_sound("applause");
+	this.trombone= 			make_sound("sad_trombone");
 	
 	this.time_remaining= 	0;				// The time remaining in the current round
 	this.round_length= 		20000;			// The duration of a single round in millis
@@ -42,8 +42,8 @@ CASUAL.Game = function(_players, _categories, _cities, _num_rounds)
 	this.paused= 			false;			// Whether the game is currently paused
 	
 	// callback functions
-	this.round_start_cb= 	null;
-	this.round_end_cb= 		null;
+	this.start_round_cb= 	null;
+	this.end_round_cb= 		null;
 	this.end_game_cb= 		null;
 	
 
@@ -59,25 +59,34 @@ CASUAL.Game = function(_players, _categories, _cities, _num_rounds)
 
 
 // Game Functions
-CASUAL.Game.prototype = 
-{	
+Game.prototype = 
+{		
 	// ------------------------------------------
-	make_sound: function(name)
+	// Loads 3 'items' from api.php into 'items' var
+	// start_round() -> ajax_success() -> image_loaded()
+	start_round: function()
 	{
-		var audio = document.createElement("audio");
-		var source = document.createElement('source');
-		if (audio.canPlayType('audio/mpeg;')) {
-			source.type= 'audio/mpeg';
-			source.src= 'sounds/'+name+'.mp3';
-		} else {
-			source.type= 'audio/ogg';
-			source.src= 'sounds/'+name+'.ogg';
-		}
-		audio.appendChild(source);
-		audio.load();
-		return audio;
-	},
+		console.log("start_round()");
+		
+		// Reset the items array, the guess count, and the css colors
+		this.reset_round();
 	
+		// Pick a new category
+		var i = Math.floor( Math.random() * this.categories.length );
+		this.category = this.categories[i];		
+		
+		$("#round_info").html("Loading "+this.category+' <img src="gs/ajax-loader.gif" />');
+		
+		// Make the call to the API
+		this.xhr_ptr = $.ajax({
+			url: "api.php",
+			dataType: 'json',
+			data: {'query': this.category, 'cities': this.cities },
+			success: function(response) { game.ajax_success(response); }
+		});
+	},
+
+
 	// ------------------------------------------
 	update: function()
 	{
@@ -149,32 +158,7 @@ CASUAL.Game.prototype =
 			this.update();
 		}
 	},
-	
-	
-	// ------------------------------------------
-	// Loads 3 'items' from api.php into 'items' var
-	// start_round() -> ajax_success() -> image_loaded()
-	start_round: function()
-	{
-		console.log("start_round()");
-		
-		// Reset the items array, the guess count, and the css colors
-		this.reset_round();
-	
-		// Pick a new category
-		var i = Math.floor( Math.random() * this.categories.length );
-		this.category = this.categories[i];		
-		
-		$("#round_info").html("Loading "+this.category+' <img src="gs/ajax-loader.gif" />');
-		
-		// Make the call to the API
-		this.xhr_ptr = $.ajax({
-			url: "api.php",
-			dataType: 'json',
-			data: {'query': this.category, 'cities': this.cities },
-			success: function(response) { game.ajax_success(response); }
-		});
-	},
+
 
 
 	// ------------------------------------------
@@ -223,7 +207,6 @@ CASUAL.Game.prototype =
 	},
 
 
-
 	// ------------------------------------------
 	// called from ajax_success() when image has loaded successfully
 	// This finally kicks off the round
@@ -245,6 +228,10 @@ CASUAL.Game.prototype =
 
 		console.log("setting time_remaining to "+this.round_length);
 		this.time_remaining = this.round_length;
+		
+		if(this.start_round_cb!=null)
+			this.start_round_cb(this.image);
+		
 		this.update();
 	},
 	
@@ -296,7 +283,8 @@ CASUAL.Game.prototype =
 		console.log("end_game()");
 		
 		var winner = this.get_winner();
-		this.end_game_cb( this.get_winner() );
+		if(this.end_game_cb!=null)
+			this.end_game_cb( this.get_winner() );
 	},
 	
 	

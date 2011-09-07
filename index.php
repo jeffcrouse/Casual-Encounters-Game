@@ -79,7 +79,7 @@
 			margin-left:150px;
 			width:125px;
 			height:31px;
-			background:#666666 url(img/button.png) no-repeat;
+			background:#666666;
 			text-align:center;
 			line-height:31px;
 			color:#FFFFFF;

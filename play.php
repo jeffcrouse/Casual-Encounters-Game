@@ -8,6 +8,10 @@ foreach($_REQUEST['players'] as $player)
 	if(!empty($player)) $players[] = substr($player, 0, 10);
 	
 $num_players = count($players);
+$num_rounds = (!isset($_REQUEST['rounds'])||abs($_REQUEST['rounds'])>20)
+	? 10
+	: abs(intval($_REQUEST['rounds']));
+
 
 // Check for problems
 if(count($_REQUEST['categories'])==0)		header("Location: index.php?error=nocats");
@@ -133,36 +137,44 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 
 	</div>
 
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-	<script>!window.jQuery && document.write(unescape('%3Cscript src="js/libs/jquery-1.6.2.min.js"%3E%3C/script%3E'))</script>
-	<script type="text/javascript" src="js/libs/jquery-ui-1.8.15.custom.min.js"></script>
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
 	
+	<script type="text/javascript" src="js/utils.js"></script>
 	<script type="text/javascript" src="js/Game.js"></script>
 	<script type="text/javascript" src="js/Detector.js"></script> 
-	
-	<!-- TO DO: Can these be added dynamically depending on which kind of game is chosen? -->
-	<script type="text/javascript" src="js/WebGLGame.js"></script>
-	<script type="text/javascript" src="js/CanvasGame.js"></script>
-	<script type="text/javascript" src="js/HTMLGame.js"></script>
-	
+	<script type="text/javascript" src="js/RequestAnimationFrame.js"></script> 
 	
     <script>
 		// vaaaars!
 		var players = ["<?php echo implode('","', $players); ?>"];
 		var cats = ["<?php echo implode('","', $_REQUEST['categories']); ?>"];
 		var cities = ["<?php echo implode('","', $_REQUEST['cities']); ?>"];
-		var num_rounds = <?php print (!isset($_REQUEST['rounds'])||abs($_REQUEST['rounds'])>20)?10:abs(intval($_REQUEST['rounds'])); ?>;
+		var num_rounds = <?php print $num_rounds;  ?>;
 		
 		// Our game object
 		var game;
 		
-		// Figure out which renderer to use
+		
+		// TO DO:  replace wth http://headjs.com ???
+		// Figure out what subclass of CASUAL.Game object to use
 		if ( Detector.webgl ) 
-			game = new CASUAL.WebGLGame(players, cats, cities, num_rounds);
+		{
+			$.getScript('js/three.js/build/Three.js', function(data, textStatus){
+				$.getScript('js/three.js/examples/js/Stats.js', function(data, textStatus){
+					$.getScript('js/WebGLGame.js', function(data, textStatus){
+						game = new WebGLGame(players, cats, cities, num_rounds);
+						game.end_game_cb = end_game;
+						game.gl_animate();
+						console.log( game );
+					}).error(function(){alert("error loading WebGLGame.js");});
+				}).error(function(){alert("error loading Stats.js");});
+			}).error(function(){alert("error loading Three.js");});
+		}
 		else if( Detector.canvas )
-			game = new CASUAL.CanvasGame(players, cats, cities, num_rounds);
+			game = new CanvasGame(players, cats, cities, num_rounds);
 		else
-			game = new CASUAL.HTMLGame(players, cats, cities, num_rounds);
+			game = new HTMLGame(players, cats, cities, num_rounds);
 		
 		
 		// Deal with some dom events
@@ -187,7 +199,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		// --------------------------
 		// Called every time a game ends
 		// TO DO: add "tweet this game" button to the dialog
-		game.end_game_cb = function(winner)
+		function end_game(winner)
 		{
 			var title = (winner==null) ? "Really? No score?" : winner.name+" wins!";
 			$("#dialog_end").dialog({width: '40%', title: title, closeOnEscape: false, buttons: [
