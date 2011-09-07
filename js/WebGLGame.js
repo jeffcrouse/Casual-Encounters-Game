@@ -16,7 +16,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	var h = window.innerHeight;
 	
 	// WebGL vars
-	this.statsEnabled= 		true;
+	this.statsEnabled= 		false;
 	this.camera=			new THREE.Camera(35, w / h, .1, 10000 );
 	this.scene=				new THREE.Scene();
 	this.renderer=			new THREE.WebGLRenderer();
@@ -25,7 +25,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	this.max_height=		1 - (w-h) * (1/w);
 	
 	
-	console.log("initializing: w="+w+" h="+h+" max_height="+this.max_height);
+	console.log("w="+w+" h="+h+" max_height="+this.max_height);
 	
 	// Camera params : 
 	// field of view, aspect ratio for render output, near and far clipping plane. 
@@ -39,12 +39,11 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	if ( this.statsEnabled ) 
 	{
 		this.stats = new Stats();
-		this.stats.domElement.style.position = 'absolute';
-		this.stats.domElement.style.top = '0px';
-		this.stats.domElement.style.zIndex = 100;
+		$(this.stats.domElement).css({'position': 'absolute', 'top': '0px', 'zIndex': 100});
 		$("body").append( this.stats.domElement );
 	};
 
+	
 	
 	// FUNCTIONS
 	
@@ -54,7 +53,6 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	this.start_round_cb = function()
 	{
 		console.log("WebGLGame.start_round_cb called");
-		
 		
 		if(this.mesh)
 			this.scene.removeObject( this.mesh );
@@ -79,29 +77,30 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	this.end_round_cb = function()
 	{
 		console.log("WebGLGame.end_round_cb called");
+		
+		if(this.mesh)
+			this.mesh.position.y = 0;
 	};
 	
 	
 	// ------------------------------------------
-	this.gl_animate = function()
-	{
-		requestAnimationFrame( game.gl_animate );
-		game.gl_render();
-		if ( game.statsEnabled ) game.stats.update();
-	};
-	
-	// ------------------------------------------
-	this.gl_render = function()
+	// Callback that happens every 10 ms
+	this.update_cb = function()
 	{
 		// How much of the round is left?
 		var pct = this.time_remaining / this.round_length;
-
-		if(game.mesh)
-		{
-			game.mesh.position.y = (-game.max_height) * pct;
-		}
-		
+		if(this.mesh)
+			this.mesh.position.y = (-this.max_height) * pct;
+	};
+	
+	// ------------------------------------------
+	// I don't fully understand how, but this is how the draw loop is kicked off.
+	this.gl_animate = function()
+	{
+		requestAnimationFrame( game.gl_animate );
 		game.renderer.render( game.scene, game.camera );
+		
+		if ( game.statsEnabled ) game.stats.update();
 	};
 }
 

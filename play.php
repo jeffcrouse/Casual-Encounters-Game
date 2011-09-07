@@ -129,7 +129,7 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		// TO DO:  replace wth http://headjs.com ???
 		// Figure out what subclass of CASUAL.Game object to use using the Detector
 		// Then load the JS files that are needed and construct a game object
-		if ( false) //Detector.webgl ) 
+		if ( Detector.webgl ) 
 		{
 			$.getScript('js/three.js/build/Three.js', function(){
 			$.getScript('js/WebGLGame.js', function(){
@@ -139,16 +139,6 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 				console.log( game );
 			}).error(function(){alert("error loading WebGLGame.js");});
 			}).error(function(){alert("error loading Three.js");});
-		}
-		else if( Detector.canvas )
-		{
-			$.getScript('js/processing-1.3.0.min.js', function(){
-			$.getScript('js/CanvasGame.js', function(){
-				game = new CanvasGame(players, cats, cities, num_rounds);
-				game.end_game_cb = end_game;
-				console.log( game );
-			}).error(function(){alert("error loading CanvasGame.js");});
-			}).error(function(){alert("error loading processing-js");});			
 		}
 		else
 		{

@@ -46,7 +46,7 @@ Game = function(_players, _categories, _cities, _num_rounds)
 	this.start_round_cb= 	null;
 	this.end_round_cb= 		null;
 	this.end_game_cb= 		null;
-	
+	this.update_cb=			null;
 
 	// if there is only one player, activate 'click' mode
 	if(this.players.length==1)
@@ -107,6 +107,9 @@ Game.prototype =
 			console.log("time is up");
 			this.end_round();
 		}
+		
+		if(this.update_cb!=null)
+			this.update_cb();
 	},
 
 	
@@ -196,9 +199,7 @@ Game.prototype =
 			
 			
 			$(this.image).load(function(){
-			
 				game.image_loaded();
-				
 			}).error(function() { 		
 				// Try again if $(image) didn't load properly
 				console.log("error loading an image. trying again");
@@ -266,6 +267,9 @@ Game.prototype =
 	{
 		console.log("end_round()");
 		this.time_remaining=0;
+
+		if(this.end_round_cb!=null)
+			this.end_round_cb();
 
 		if(this.round < this.num_rounds)
 		{
