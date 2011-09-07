@@ -16,7 +16,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	var h = window.innerHeight;
 	
 	// WebGL vars
-	this.statsEnabled= 		false;
+	this.statsEnabled= 		true;
 	this.camera=			new THREE.Camera(35, w / h, .1, 10000 );
 	this.scene=				new THREE.Scene();
 	this.renderer=			new THREE.WebGLRenderer();
@@ -31,9 +31,9 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	this.camera.position.set(0, 0, 1);
 
 	this.renderer.setSize( w, h );
-	this.renderer.setClearColor( new THREE.Color(0x000000) );
+	this.renderer.setClearColor( new THREE.Color(0x0000FF) );
 	
-	$("#container").append( this.renderer.domElement );
+	$("body").append( this.renderer.domElement );
 	
 	if ( this.statsEnabled ) 
 	{
@@ -41,7 +41,7 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 		this.stats.domElement.style.position = 'absolute';
 		this.stats.domElement.style.top = '0px';
 		this.stats.domElement.style.zIndex = 100;
-		this.container.appendChild( stats.domElement );
+		$("body").append( this.stats.domElement );
 	};
 
 	
@@ -50,9 +50,10 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 	
 	// ------------------------------------------
 	// Callback that happens at the beginning of a round
-	this.round_start_cb = function(the_image)
+	this.start_round_cb = function()
 	{
-		console.log("WebGLGame.image_loaded called");
+		console.log("WebGLGame.start_round_cb called");
+		
 		
 		if(this.mesh)
 			this.scene.removeObject( this.mesh );
@@ -61,12 +62,13 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 		var ratio = height / this.image.height;
 		var width = this.image.width * ratio;
 	
-		var texture = new THREE.Texture(the_image);
+		var texture = new THREE.Texture(this.image.src);
 		var material = new THREE.MeshBasicMaterial( { map: texture } );
 		var geometry = new THREE.PlaneGeometry(width, height, 10, 10);
 
 		this.mesh = new THREE.Mesh( geometry, material );
-		this.mesh.translateY( -this.max_height );
+		console.log( this.mesh );
+		//this.mesh.translateY( -this.max_height );
 		this.scene.addObject( this.mesh );
 	};
 	
@@ -93,10 +95,12 @@ WebGLGame = function(_players, _categories, _cities, _num_rounds)
 		// How much of the round is left?
 		var pct = this.time_remaining / this.round_length;
 
-		if(this.mesh)
-			this.mesh.position.y = (-this.max_height) * pct;
-
-		this.renderer.render( this.scene, this.camera );
+		if(game.mesh)
+		{
+			//game.mesh.position.y = (-game.max_height) * pct;
+		}
+		
+		game.renderer.render( game.scene, game.camera );
 	};
 }
 

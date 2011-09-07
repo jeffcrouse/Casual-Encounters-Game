@@ -7,7 +7,7 @@ body, html {
 	background-color: #000000;
 	text-shadow: 2px 2px 2px black;
 }
-header {
+#top_bar {
 	padding-top: 20px;
 	font-size: 42px;
 	position: absolute;

@@ -230,7 +230,7 @@ Game.prototype =
 		this.time_remaining = this.round_length;
 		
 		if(this.start_round_cb!=null)
-			this.start_round_cb(this.image);
+			this.start_round_cb();
 		
 		this.update();
 	},
