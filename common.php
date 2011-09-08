@@ -1,6 +1,7 @@
 <?php
+session_start();
 ini_set('display_errors', 1);
-error_reporting(E_ALL);
+error_reporting(E_ALL ^ E_STRICT);
 
 
 $_CITIES = array("newyork", "chicago", "sandiego", "seattle", "sfbay",
@@ -12,6 +13,8 @@ $_CATEGORIES = array("m4w","w4m","m4m","w4w","t4m","mw4mw", "mw4w","mw4m",
 	"w4mw","m4mw","w4ww","m4mm","mm4m","ww4w","ww4m","mm4w","m4ww","w4mm",
 	"t4mw","mw4t"
 );
+
+$_BLACKLIST = array("rape", "blood", "child");
 
 // ------------------------------------
 function get_url_contents($url)

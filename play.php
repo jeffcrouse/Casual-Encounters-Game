@@ -115,57 +115,51 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 	<script type="text/javascript" src="js/Game.js"></script>
 	
     <script>
-		// vaaaars!
-		var back_button = {text: "No, take me back", click: function() { window.location.href = "index.php"; }};
+    	// Our game object
+		var game;
+    
+    	// Buttons used in dialog boxes
+    	var back = 	{text: "No, take me back", 	click: function() { window.location.href = "index.php"; }};
+		var start = {text: "I'm Ready!", 		click: function() {	game.start_round(); $("#dialog_begin").dialog('close'); }};
+    	var reset = {text: "Play Again", 		click: function() {	$("#dialog_end").dialog('close'); game.reset_game(); }};
+    	
+		// Vars passed in from URL used to initialize game
 		var players = ["<?php echo implode('","', $players); ?>"];
 		var cats = ["<?php echo implode('","', $categories); ?>"];
 		var cities = ["<?php echo implode('","', $cities); ?>"];
 		var num_rounds = <?php print $num_rounds;  ?>;
 		
-		// Our game object
-		var game;
-		
-		
-		// TO DO:  replace wth http://headjs.com ???
-		// Figure out what subclass of CASUAL.Game object to use using the Detector
-		// Then load the JS files that are needed and construct a game object
-		if ( Detector.webgl ) 
-		{
-			$.getScript('js/three.js/build/Three.js', function(){
-			$.getScript('js/WebGLGame.js', function(){
-				game = new WebGLGame(players, cats, cities, num_rounds);
-				game.end_game_cb = end_game;
-				game.gl_animate();
-				console.log( game );
-			}).error(function(){alert("error loading WebGLGame.js");});
-			}).error(function(){alert("error loading Three.js");});
-		}
-		else
-		{
-			$.getScript('js/HTMLGame.js', function(){
-				game = new HTMLGame(players, cats, cities, num_rounds);
-				game.end_game_cb = end_game;
-				console.log( game );
-			}).error(function(){alert("error loading HTMLGame");});
-		}
-		
-		
-		// Deal with some dom events
-		$(window).resize( function() {  });
+		// Send keypresses to the game object
 		$(window).keypress( function(e){ game.key_pressed(e); } );
 		
-		
+		// When the document is ready, load stuff!
 		$(document).ready(function() {
 			// Show the initial dialog box.  Pressing 'I'm Ready!' starts the game.
-			$("#dialog_begin").dialog({width: '700px', title:'How to play', closeOnEscape:false, buttons: [
-				{	text: "I'm Ready!",
-					click: function() {
-						game.start_round();
-						$(this).dialog('close');
-					}
-				},
-				back_button
-			] });
+			var options = {width: '700px', title: 'How to play', closeOnEscape: false, buttons: [start,back]};
+			
+			// Figure out what subclass of CASUAL.Game object to use using the Detector
+			// Then load the JS files that are needed and construct a game object
+			if ( Detector.webgl ) 
+			{
+				$.getScript('js/Three.js', function(){
+				$.getScript('js/WebGLGame.js', function(){
+					game = new WebGLGame(players, cats, cities, num_rounds);
+					game.end_game_cb = end_game;
+					game.gl_animate();
+					console.log( game );
+					$("#dialog_begin").dialog(options);
+				}).error(function(){alert("error loading WebGLGame.js");});
+				}).error(function(){alert("error loading Three.js");});
+			}
+			else
+			{
+				$.getScript('js/HTMLGame.js', function(){
+					game = new HTMLGame(players, cats, cities, num_rounds);
+					game.end_game_cb = end_game;
+					console.log( game );
+					$("#dialog_begin").dialog(options);
+				}).error(function(){alert("error loading HTMLGame");});
+			}
 		});
 		
 		// --------------------------
@@ -174,15 +168,8 @@ if($num_players<1||$num_players>3) 			header("Location: index.php?error=playerco
 		function end_game(winner)
 		{
 			var t = (winner==null) ? "Really? No score?" : winner.name+" wins!";
-			$("#dialog_end").dialog({width:'40%', title:t, closeOnEscape:false, buttons: [
-				{	text: "Play Again",
-					click:  function() { 
-						$(this).dialog('close');
-						game.reset_game();
-					}
-				},
-				back_button
-			] });
+			var options = {width:'40%', title:t, closeOnEscape:false, buttons:[reset, back]};
+			$("#dialog_end").dialog(options);
 		}
 		
     </script>

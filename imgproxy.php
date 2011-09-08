@@ -1,4 +1,11 @@
 <?php
+/*
+Simply takes a URL and spits out the image.
+This is needed by WebGL because it won't load remote images as textures.
+https://developer.mozilla.org/en/WebGL/Cross-Domain_Textures
+- Jeff Sept 8 2011
+*/
+
 $filename = $_GET['url'];
 $ext = pathinfo($filename, PATHINFO_EXTENSION);
  
